@@ -1,2 +1,7 @@
+0.14  2004-08-28 17:05
+	* uses Pod::Usage
+	* now skips ponie and parrot (not just perl)
+	* -p option to override the above skipping
+	* "seen_changes" attribute and return value added
 0.10  2004-08-26 10:50
 	* initial release

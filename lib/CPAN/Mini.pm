@@ -1,19 +1,18 @@
-#!/usr/bin/perl -w
 package CPAN::Mini;
-our $VERSION = '0.10';
+our $VERSION = '0.14';
 
 use strict;
 use warnings;
 
 =head1 NAME
 
-CPAN::Mini -- create a minimal mirror of CPAN
+CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.10
+version 0.14
 
- $Id: Mini.pm,v 1.3 2004/08/26 14:52:08 rjbs Exp $
+ $Id: Mini.pm,v 1.7 2004/08/28 21:11:39 rjbs Exp $
 
 =head1 SYNOPSIS
 
@@ -67,7 +66,7 @@ use Compress::Zlib qw(gzopen $gzerrno);
  CPAN::Mini->mirror(
   remote => "http://cpan.mirrors.comintern.su",
   local  => "/usr/share/mirrors/cpan",
-	force  => 0,
+  force  => 0,
   trace  => 1
  );
 
@@ -91,12 +90,7 @@ sub update_mirror {
 	# mirrored tracks the already done, keyed by filename
 	# 1 = local-checked, 2 = remote-mirrored
 
-	## first, get index files
-	$self->mirror_file($_) for qw(
-	                              authors/01mailrc.txt.gz
-	                              modules/02packages.details.txt.gz
-	                              modules/03modlist.data.gz
-	                             );
+	$self->mirror_indices;
 	
 	return unless $self->{force} or $self->{changes_made};
 
@@ -111,13 +105,31 @@ sub update_mirror {
 		}
 
 		my ($module, $version, $path) = split;
-		next if $path =~ m{/perl-5};  # skip Perl distributions
+		next if
+			$self->{skip_perl} and
+			$path =~ m{/(?:perl|parrot|ponie)-\d};  # skip the languages
 		$self->mirror_file("authors/id/$path", 1);
 	}
 
-	## finally, clean the files we didn't stick there
+	# eliminate files we don't need
 	$self->clean_unmirrored;
 	return $self->{changes_made};
+}
+
+=head2 C<< mirror_indices >>
+
+This method updates the index files from the CPAN.
+
+=cut
+
+sub mirror_indices {
+	my $self = shift;
+
+	$self->mirror_file($_) for qw(
+	                              authors/01mailrc.txt.gz
+	                              modules/02packages.details.txt.gz
+	                              modules/03modlist.data.gz
+	                             );
 }
 
 =head2 C<< mirror_file($path, $skip_if_present) >>
@@ -200,7 +212,8 @@ Randal Schwartz <F<merlyn@stonehenge.com>> did all the work.
 
 Ricardo SIGNES <F<rjbs@cpan.org>> made a module and distribution.
 
-This code was copyrighted in 2004, by Randal Schwartz.
+This code was copyrighted in 2004, and is released under the same terms as Perl
+itself.
 
 =cut
 

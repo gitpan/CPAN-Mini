@@ -8,14 +8,19 @@ minicpan - uses CPAN::Mini to create or update a local mirror
 
 =head1 SYNOPSIS
 
- user@host$ minicpan
+ minicpan [options]
+
+ Options
+   -l LOCAL   - where is the local minicpan?
+   -r REMOTE  - where is the remote cpan mirror?
+   -q         - run in quiet mode (don't print status)
+   -f         - check all directories, even if indices are unchanged
+   -p         - mirror perl, ponie, and parrot distributions
 
 =head1 DESCRIPTION
 
 This simple shell script just updates (or creates) a miniature CPAN mirror as
-described in CPAN::Mini.  See also the original article here: 
-
- http://www.stonehenge.com/merlyn/LinuxMag/col42.html
+described in CPAN::Mini.
 
 The local and remote mirror locations are (for now) hardcoded and should be
 updated before running this script for the first time.
@@ -24,29 +29,18 @@ updated before running this script for the first time.
 
 use CPAN::Mini;
 use Getopt::Long qw(GetOptions);
-
-sub usage {
-	print <<END;
-usage: minicpan [options]
-  -l LOCAL       - where is the local minicpan?
-  -r REMOTE      - where is the remote cpan mirror?
-  -q             - run in quiet mode (don't print status)
-  -f             - unless given, exit if indices are unchanged
-END
-}
+use Pod::Usage;
 
 GetOptions(
+           "h|help"     => sub { pod2usage(1); },
            "l|local=s"  => \ (my $local  = ''),
            "r|remote=s" => \ (my $remote = ''),
            "q+" => \ (my $quiet = 0),
            "f+" => \ (my $force = 0),
-#           "<>" => sub { $Getopt::Long::error = $Getopt::Long::error + 1;
-#                         warn "Unknown arg: $_[0]\n";
-#                       },
-          ) or usage() and exit;
+           "p+" => \ (my $perl  = 0),
+          ) or pod2usage(2);
 
-usage() and exit
-	unless $local and $remote;
+pod2usage(2) unless $local and $remote;
 
 $|++;
 
@@ -54,23 +48,25 @@ CPAN::Mini->update_mirror(
 	remote => $remote,
 	local  => $local,
 	trace  => (not $quiet),
-	force  => $force
+	force  => $force,
+	skip_perl => (not $perl),
 );
 
 =head1 TO DO
 
 Add a configuration file.
 
-Improve command-line options...
+Improve command-line options.
 
-...including usage instructions.
+=head1 SEE ALSO 
+
+Randal Schwartz's original article, which can be found here:
+
+	http://www.stonehenge.com/merlyn/LinuxMag/col42.html
 
 =head1 AUTHORS
 
-Randal Schwartz <F<merlyn@stonehenge.com>> did all the work.  His original
-article can be found here:
-
-	http://www.stonehenge.com/merlyn/LinuxMag/col42.html
+Randal Schwartz <F<merlyn@stonehenge.com>> did all the work.
 
 Ricardo SIGNES <F<rjbs@cpan.org>> made a module and distribution.
 

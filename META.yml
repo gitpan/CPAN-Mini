@@ -1,12 +1,13 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         CPAN-Mini
-version:      0.10
+version:      0.14
 version_from: lib/CPAN/Mini.pm
 installdirs:  site
 requires:
     Compress::Zlib:                1.20
     LWP:                           5
+    Pod::Usage:                    1
     URI:                           1
 
 distribution_type: module
