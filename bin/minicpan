@@ -32,31 +32,66 @@ use CPAN::Mini;
 use Getopt::Long qw(GetOptions);
 use Pod::Usage;
 
+sub config_read {
+	my $filename = shift;
+
+	return unless -e $filename;
+
+	open my $config_file, '<', $filename
+		or die "couldn't open config file $filename: $!";
+	
+	my %config;
+	while (<$config_file>) { 
+		chomp;
+		next if /\A\s*\Z/sm;
+		if (/\A(\w+):\s*(.+)\Z/sm) { $config{$1} = $2; }
+	}
+	return %config;
+}
+
+my %config = (
+	dirmode => 0711
+);
+
+%config = config_read( $ENV{HOME} . '/.minicpanrc' );
+
 GetOptions(
            "h|help"     => sub { pod2usage(1); },
            "v|version"  => sub { print "minicpan, powered by CPAN::Mini $CPAN::Mini::VERSION\n\n"; exit; },
-           "l|local=s"  => \ (my $local  = ''),
-           "r|remote=s" => \ (my $remote = ''),
-           "q+" => \ (my $quiet = 0),
-           "f+" => \ (my $force = 0),
-           "p+" => \ (my $perl  = 0),
+           "l|local=s"   => \$config{local},
+           "r|remote=s"  => \$config{remote},
+           "d|dirmode=s" => \$config{dirmode},
+           "q+" => \$config{quiet},
+           "f+" => \$config{force},
+           "p+" => \$config{perl},
+           "x+" => \$config{exact_mirror},
           ) or pod2usage(2);
 
-pod2usage(2) unless $local and $remote;
+pod2usage(2) unless $config{local} and $config{remote};
 
 $|++;
 
 CPAN::Mini->update_mirror(
-	remote => $remote,
-	local  => $local,
-	trace  => (not $quiet),
-	force  => $force,
-	skip_perl => (not $perl),
+	remote => $config{remote},
+	local  => $config{local},
+	trace  => (not $config{quiet}),
+	force  => $config{force},
+	dirmode => $config{dirmode},
+	skip_perl => (not $config{perl}),
+	exact_mirror => ($config{exact_mirror}),
 );
 
-=head1 TO DO
+=head1 CONFIGURATION FILE
 
-Add a configuration file.
+C<minicpan> will read the file C<~/.minicpanrc> to get configuration
+information.  The file is a simple set of names and values, as in the following
+example:
+
+ local:  /home/rjbs/mirrors/minicpan/
+ remote: http://your.favorite.cpan/cpan/
+ exact_mirror: 1
+
+=head1 TO DO
 
 Improve command-line options.
 

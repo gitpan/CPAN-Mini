@@ -1,5 +1,5 @@
 package CPAN::Mini;
-our $VERSION = '0.18';
+our $VERSION = '0.20';
 
 use strict;
 use warnings;
@@ -10,9 +10,9 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.18
+version 0.20
 
- $Id: Mini.pm,v 1.11 2004/09/22 00:17:32 rjbs Exp $
+ $Id: Mini.pm,v 1.12 2004/09/28 10:41:48 rjbs Exp $
 
 =head1 SYNOPSIS
 
@@ -50,7 +50,7 @@ the newest version of every distribution.  Those files are:
 use Carp;
 
 use File::Path qw(mkpath);
-use File::Basename qw(dirname);
+use File::Basename qw(basename dirname);
 use File::Spec::Functions qw(catfile canonpath);
 use File::Find qw(find);
 
@@ -183,6 +183,21 @@ sub mirror_file {
 	}
 }
 
+=head2 C<< file_allowed($file) >>
+
+This method returns true if the given file is allowed to exist in the local
+mirror, even if it isn't one of the required mirror files.
+
+By default, only dot-files are allowed.
+
+=cut
+
+sub file_allowed {
+	my ($self, $file) = @_;
+	return if $self->{exact_mirror};
+	return (substr(basename($file),0,1) eq '.') ? 1 : 0;
+}
+
 =head2 C<< clean_unmirrored >>
 
 This method finds any files in the local mirror which are no longer needed and
@@ -195,7 +210,8 @@ sub clean_unmirrored {
 
 	find sub {
 		my $file = canonpath($File::Find::name);
-		return unless -f $file and not $self->{mirrored}{$file};
+		return unless (-f $file and not $self->{mirrored}{$file});
+		return if $self->file_allowed($file);
 		$self->trace("$file ... removed\n");
 		unlink $file or warn "Cannot remove $file $!";
 	}, $self->{local};

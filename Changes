@@ -1,3 +1,8 @@
+0.20  2004-09-28 10:20
+      added config file
+      added file_allowed (to override cleanup)
+      the -d option, long documented, now works
+
 0.18  2004-09-21 20:15
       canonpath File::Find::name to avoid horrible Win32 bug
       added -v to print version of CPAN::Mini
