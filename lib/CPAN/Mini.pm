@@ -1,5 +1,5 @@
 package CPAN::Mini;
-our $VERSION = '0.16';
+our $VERSION = '0.18';
 
 use strict;
 use warnings;
@@ -10,9 +10,9 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.16
+version 0.18
 
- $Id: Mini.pm,v 1.9 2004/09/08 01:46:27 rjbs Exp $
+ $Id: Mini.pm,v 1.11 2004/09/22 00:17:32 rjbs Exp $
 
 =head1 SYNOPSIS
 
@@ -21,7 +21,7 @@ L<minicpan> command, instead.)
 
  use CPAN::Mini;
 
- CPAN::Mini->mirror(
+ CPAN::Mini->update_mirror(
   remote => "http://cpan.mirrors.comintern.su",
   local  => "/usr/share/mirrors/cpan",
   trace  => 1
@@ -51,7 +51,7 @@ use Carp;
 
 use File::Path qw(mkpath);
 use File::Basename qw(dirname);
-use File::Spec::Functions qw(catfile);
+use File::Spec::Functions qw(catfile canonpath);
 use File::Find qw(find);
 
 use URI ();
@@ -63,7 +63,7 @@ use Compress::Zlib qw(gzopen $gzerrno);
 
 =head2 C<< update_mirror( %args ) >>
 
- CPAN::Mini->mirror(
+ CPAN::Mini->update_mirror(
   remote => "http://cpan.mirrors.comintern.su",
   local  => "/usr/share/mirrors/cpan",
   force  => 0,
@@ -194,9 +194,10 @@ sub clean_unmirrored {
 	my $self = shift;
 
 	find sub {
-		return unless -f and not $self->{mirrored}{$File::Find::name};
-		$self->trace("$File::Find::name ... removed\n");
-		unlink $_ or warn "Cannot remove $File::Find::name: $!";
+		my $file = canonpath($File::Find::name);
+		return unless -f $file and not $self->{mirrored}{$file};
+		$self->trace("$file ... removed\n");
+		unlink $file or warn "Cannot remove $file $!";
 	}, $self->{local};
 }
 
@@ -221,6 +222,12 @@ Randal Schwartz's original article on minicpan, here:
 
 L<CPANPLUS::Backend>, which provides the C<local_mirror> method, which performs
 the same task as this module.
+
+=head1 THANKS
+
+Thanks to David Dyck for letting me know about my stupid documentation errors.
+
+Thanks to Roy Fulbright for finding an obnoxious bug on Win32.
 
 =head1 AUTHORS
 

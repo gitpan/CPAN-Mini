@@ -1,9 +1,15 @@
+0.18  2004-09-21 20:15
+      canonpath File::Find::name to avoid horrible Win32 bug
+      added -v to print version of CPAN::Mini
+
 0.16  2004-09-07 21:50
-	* added -d to set mode for created dirs
+      added -d to set mode for created dirs
+
 0.14  2004-08-28 17:05
-	* uses Pod::Usage
-	* now skips ponie and parrot (not just perl)
-	* -p option to override the above skipping
-	* "seen_changes" attribute and return value added
+      uses Pod::Usage
+      now skips ponie and parrot (not just perl)
+      -p option to override the above skipping
+      "seen_changes" attribute and return value added
+
 0.10  2004-08-26 10:50
-	* initial release
+      initial release
