@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 17;
+use Test::More tests => 19;
 
 use CPAN::Mini;
 
@@ -23,7 +23,6 @@ ok($self->_filter_module({
 	version => '0.01',
 	path => '/perl-0.01.tar.gz',
 }), "perl distro skip check");
-
 
 ok($self->_filter_module({
 	module => 'bioperl',
@@ -63,7 +62,6 @@ ok(!$self->_filter_module({
 	path => '/perl-0.01.tar.gz',
 }), "perl distro no-skip check");
 
-
 ################################################
 # path_filters
 
@@ -73,7 +71,7 @@ ok($self->_filter_module({
 	module => 'skipme',
 	version => '0.01',
 	path => '/skipme-0.01.tar.gz',
-}), "path_filters skip check");
+}), "path_filters skip check skipme 1");
 
 ok(!$self->_filter_module({
 	module => 'noskip',
@@ -81,31 +79,35 @@ ok(!$self->_filter_module({
 	path => '/noskip-0.01.tar.gz',
 }), "path_filters no-skip check");
 
-
 $self->{path_filters} = [ 
 	qr/skipme/,
 	qr/burnme/,
+	sub { return $_[0] =~ /subskip/ }
 ];
 
 ok($self->_filter_module({
 	module => 'skipme',
 	version => '0.01',
 	path => '/skipme-0.01.tar.gz',
-}), "path_filters skip check");
+}), "path_filters skip check skipme 2");
 
 ok($self->_filter_module({
 	module => 'burnme',
 	version => '0.01',
 	path => '/burnme-0.01.tar.gz',
-}), "path_filters skip check");
+}), "path_filters skip check burnme");
 
+ok($self->_filter_module({
+	module => 'submod',
+	version => '0.01',
+	path => '/subskip-0.01.tar.gz',
+}), "path_filters skip check (by sub)");
 
 ok(!$self->_filter_module({
 	module => 'noskip',
 	version => '0.01',
 	path => '/noskip-0.01.tar.gz',
 }), "path_filters no-skip check");
-
 
 ################################################
 # module_filters
@@ -116,7 +118,7 @@ ok($self->_filter_module({
 	module => 'skipme',
 	version => '0.01',
 	path => '/skipme-0.01.tar.gz',
-}), "module_filters skip check");
+}), "module_filters skip check skipme 1");
 
 ok(!$self->_filter_module({
 	module => 'noskip',
@@ -124,24 +126,29 @@ ok(!$self->_filter_module({
 	path => '/noskip-0.01.tar.gz',
 }), "module_filters no-skip check");
 
-
 $self->{module_filters} = [ 
 	qr/skipme/,
 	qr/burnme/,
+	sub { $_[0] =~ /submod/ }
 ];
 
 ok($self->_filter_module({
 	module => 'skipme',
 	version => '0.01',
 	path => '/skipme-0.01.tar.gz',
-}), "module_filters skip check");
+}), "module_filters skip check skipme 2");
 
 ok($self->_filter_module({
 	module => 'burnme',
 	version => '0.01',
 	path => '/burnme-0.01.tar.gz',
-}), "module_filters skip check");
+}), "module_filters skip check burnme");
 
+ok($self->_filter_module({
+	module => 'submod',
+	version => '0.01',
+	path => '/subskip-0.01.tar.gz',
+}), "module_filters skip check (by sub)");
 
 ok(!$self->_filter_module({
 	module => 'noskip',

@@ -1,5 +1,5 @@
 package CPAN::Mini;
-our $VERSION = '0.32';
+our $VERSION = '0.36';
 
 use strict;
 use warnings;
@@ -10,9 +10,9 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.32
+version 0.36
 
- $Id: Mini.pm,v 1.17 2004/12/31 20:49:04 rjbs Exp $
+ $Id: Mini.pm,v 1.18 2005/01/06 23:40:22 rjbs Exp $
 
 =head1 SYNOPSIS
 
@@ -22,9 +22,9 @@ L<minicpan> command, instead.)
  use CPAN::Mini;
 
  CPAN::Mini->update_mirror(
-  remote => "http://cpan.mirrors.comintern.su",
-  local  => "/usr/share/mirrors/cpan",
-  trace  => 1
+   remote => "http://cpan.mirrors.comintern.su",
+   local  => "/usr/share/mirrors/cpan",
+   trace  => 1
  );
 
 =head1 DESCRIPTION
@@ -105,25 +105,31 @@ If true, CPAN::Mini will print status messages to STDOUT as it works.
 
 =item * C<path_filters>
 
-This options provides a set of regexps for filtering paths.  If a distribution
-matches one of the regexps in C<path_filters>, it will not be mirrored.  For
-example, the following setting would skip all distributions from RJBS and
-SUNGO:
+This options provides a set of rules for filtering paths.  If a distribution
+matches one of the rules in C<path_filters>, it will not be mirrored.  A regex
+rule is matched if the path matches the regex; a code rule is matched if the
+code returns 1 when the path is passed to it.  For example, the following
+setting would skip all distributions from RJBS and SUNGO:
 
  path_filters => [
    qr/RJBS/,
-   qr/SUNGO/,
+   sub { $_[0] =~ /SUNGO/ }
  ]
 
 =item * C<module_filters>
 
-This options provides a set of regexps for filtering modules.  It behaves like
+This options provides a set of rules for filtering modules.  It behaves like
 path_filters, but acts only on module names.  (Since most modules are in
 distributions with more than one module, this setting will probably be less
 useful than C<path_filters>.)  For example, this setting will skip any
 distribution containing only modules with the word "Acme" in them:
 
  module_filters => [ qr/Acme/i ]
+
+=item * C<skip_cleanup>
+
+If this option is true, CPAN::Mini will not try delete unmirrored files when it
+has finished mirroring
 
 =back
 
@@ -163,7 +169,7 @@ sub update_mirror {
 	}
 
 	# eliminate files we don't need
-	$self->clean_unmirrored;
+	$self->clean_unmirrored unless $self->{skip_cleanup};
 	return $self->{changes_made};
 }
 
@@ -261,36 +267,33 @@ Returns 0 if the distribution is to not filtered (not to be skipped).
 
 =cut
 
+sub __do_filter {
+	my ($self, $filter, $file) = @_;
+	return unless $filter;
+	if (ref($filter) eq 'ARRAY') {
+		for (@$filter) {
+			return 1 if $self->__do_filter($_, $file);
+		}
+	}
+	if (ref($filter) eq 'CODE') {
+		return $filter->($file);
+	} else {
+		return $file =~ $filter;
+	}
+}
+
 sub _filter_module {
 	my $self = shift;
 	my $args = shift;
  
-	if($self->{skip_perl}) {
+	if ($self->{skip_perl}) {
 		return 1 if $args->{path} =~ m{/(?:emb|syb|bio)*perl-\d}i;
 		return 1 if $args->{path} =~ m{/(?:parrot|ponie)-\d}i;
 		return 1 if $args->{path} =~ m{/\bperl5\.004}i;
 	}
 
- if ($self->{path_filters}) {
-		if (ref $self->{path_filters} && ref $self->{path_filters} eq 'ARRAY') {
-			foreach my $filter (@{ $self->{path_filters} }) {
-				return 1 if $args->{path} =~ $filter;
-			}
-		} else {
-			return 1 if $args->{path} =~ $self->{path_filters};
-		}
-	}
-
-	if ($self->{module_filters}) {
-		if (ref $self->{module_filters} && ref $self->{module_filters} eq 'ARRAY') {
-			foreach my $filter (@{ $self->{module_filters} }) {
-				return 1 if $args->{module} =~ $filter;
-			}
-		} else {
-			return 1 if $args->{module} =~ $self->{module_filters};
-		}
-	}
-
+	return 1 if $self->__do_filter($self->{path_filters}, $args->{path});
+	return 1 if $self->__do_filter($self->{module_filters}, $args->{module});
 	return 0;
 }
 
@@ -373,7 +376,7 @@ Thanks to Roy Fulbright for finding an obnoxious bug on Win32.
 Thanks to Shawn Sorichetti for fixing a stupid octal-number-as-string bug.
 
 Thanks to sungo for implementing the filters, so I can finally stop mirroring
-bioperl.
+bioperl, and Robert Rothenberg for suggesting adding coderef rules.
 
 =head1 AUTHORS
 
