@@ -1,5 +1,5 @@
 package CPAN::Mini;
-our $VERSION = '0.20';
+our $VERSION = '0.24';
 
 use strict;
 use warnings;
@@ -10,9 +10,9 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.20
+version 0.24
 
- $Id: Mini.pm,v 1.12 2004/09/28 10:41:48 rjbs Exp $
+ $Id: Mini.pm,v 1.14 2004/11/29 21:06:32 rjbs Exp $
 
 =head1 SYNOPSIS
 
@@ -64,23 +64,67 @@ use Compress::Zlib qw(gzopen $gzerrno);
 =head2 C<< update_mirror( %args ) >>
 
  CPAN::Mini->update_mirror(
-  remote => "http://cpan.mirrors.comintern.su",
-  local  => "/usr/share/mirrors/cpan",
-  force  => 0,
-  trace  => 1
+   remote => "http://cpan.mirrors.comintern.su",
+   local  => "/usr/share/mirrors/cpan",
+   force  => 0,
+   trace  => 1
  );
 
 This is the only method that need be called from outside this module.  It will
-update the local mirror with the files from the remote mirror.  If the C<trace>
-option is true, CPAN::Mini will print status messages as it runs.
+update the local mirror with the files from the remote mirror.   
 
 C<update_mirror> creates an ephemeral CPAN::Mini object on which other
 methods are called.  That object is used to store mirror location and state.
 
-The C<dirmode> option (generally an octal number) sets the permissions of
-created directories.  It defaults to 0711.
-
 This method returns the number of files updated.
+
+The following options are recognized:
+
+=over 4
+
+=item * C<dirmode>
+
+Generally an octal number, this option sets the permissions of created
+directories.  It defaults to 0711.
+
+=item * C<force>
+
+If true, this option will cause CPAN::Mini to read the entire module list and
+update anything out of date, even if the module list itself wasn't out of date
+on this run.
+
+=item * C<skip_perl>
+
+If true, CPAN::Mini will skip the major language distributions: perl, parrot,
+and ponie.
+
+=item * C<trace>
+
+If true, CPAN::Mini will print status messages to STDOUT as it works.
+
+=item * C<path_filters>
+
+This options provides a set of regexps for filtering paths.  If a distribution
+matches one of the regexps in C<path_filters>, it will not be mirrored.  For
+example, the following setting would skip all distributions from RJBS and
+SUNGO:
+
+ path_filters => [
+   qr/RJBS/,
+   qr/SUNGO/,
+ ]
+
+=item * C<module_filters>
+
+This options provides a set of regexps for filtering modules.  It behaves like
+path_filters, but acts only on module names.  (Since most modules are in
+distributions with more than one module, this setting will probably be less
+useful than C<path_filters>.)  For example, this setting will skip any
+distribution containing only modules with the word "Acme" in them:
+
+ module_filters => [ qr/Acme/i ]
+
+=back
 
 =cut
 
@@ -108,9 +152,12 @@ sub update_mirror {
 		}
 
 		my ($module, $version, $path) = split;
-		next if
-			$self->{skip_perl} and
-			$path =~ m{/(?:perl|parrot|ponie)-\d};  # skip the languages
+		next if $self->_filter_module({
+			module  => $module,
+			version => $version,
+			path    => $path,
+		});
+
 		$self->mirror_file("authors/id/$path", 1);
 	}
 
@@ -183,6 +230,54 @@ sub mirror_file {
 	}
 }
 
+=begin devel
+
+=head2 C<< _filter_module({ module => $foo, version => $foo, path => $foo }) >>
+
+This internal-only method encapsulates the logic where we figure out if a
+module is to be mirrored or not. Better stated, this method holds the filter
+chain logic. C<update_mirror()> takes an optional set of filter parameters.  As
+C<update_mirror()> encounters a distribution, it calls this method to figure
+out whether or not it should be downloaded. The user provided filters are taken
+into account. Returns 1 if the distribution is filtered (to be skipped).
+Returns 0 if the distribution is to not filtered (not to be skipped).
+
+=end devel
+
+=cut
+
+sub _filter_module {
+	my $self = shift;
+	my $args = shift;
+ 
+	if($self->{skip_perl}) {
+		return 1 if $args->{path} =~ m{/(?:emb|syb|bio)*perl-\d}i;
+		return 1 if $args->{path} =~ m{/(?:parrot|ponie)-\d}i;
+	}
+
+ if ($self->{path_filters}) {
+		if (ref $self->{path_filters} && ref $self->{path_filters} eq 'ARRAY') {
+			foreach my $filter (@{ $self->{path_filters} }) {
+				return 1 if $args->{path} =~ $filter;
+			}
+		} else {
+			return 1 if $args->{path} =~ $self->{path_filters};
+		}
+	}
+
+	if ($self->{module_filters}) {
+		if (ref $self->{module_filters} && ref $self->{module_filters} eq 'ARRAY') {
+			foreach my $filter (@{ $self->{module_filters} }) {
+				return 1 if $args->{module} =~ $filter;
+			}
+		} else {
+			return 1 if $args->{module} =~ $self->{module_filters};
+		}
+	}
+
+	return 0;
+}
+
 =head2 C<< file_allowed($file) >>
 
 This method returns true if the given file is allowed to exist in the local
@@ -244,6 +339,11 @@ the same task as this module.
 Thanks to David Dyck for letting me know about my stupid documentation errors.
 
 Thanks to Roy Fulbright for finding an obnoxious bug on Win32.
+
+Thanks to Shawn Sorichetti for fixing a stupid octal-number-as-string bug.
+
+Thanks to sungo for implementing the filters, so I can finally stop mirroring
+bioperl.
 
 =head1 AUTHORS
 

@@ -1,3 +1,7 @@
+0.24  2004-11-29 14:30
+      dirmode is correctly octalized (thanks SSORICHE)
+      sungo's *_filters patch
+
 0.20  2004-09-28 10:20
       added config file
       added file_allowed (to override cleanup)

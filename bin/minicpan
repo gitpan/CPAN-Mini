@@ -13,7 +13,7 @@ minicpan - uses CPAN::Mini to create or update a local mirror
  Options
    -l LOCAL   - where is the local minicpan?     (required)
    -r REMOTE  - where is the remote cpan mirror? (required)
-   -d ####    - permissions (numeric) to use when creating directories
+   -d 0###    - permissions (numeric) to use when creating directories
    -f         - check all directories, even if indices are unchanged
    -p         - mirror perl, ponie, and parrot distributions
    -q         - run in quiet mode (don't print status)
@@ -46,12 +46,13 @@ sub config_read {
 		next if /\A\s*\Z/sm;
 		if (/\A(\w+):\s*(.+)\Z/sm) { $config{$1} = $2; }
 	}
+	for (qw(module_filters path_filters)) {
+		$config{$_} = [ map { qr/$_/ } split /\s+/, $config{$_} ] if $config{$_};
+	}
 	return %config;
 }
 
-my %config = (
-	dirmode => 0711
-);
+my %config;
 
 %config = config_read( $ENV{HOME} . '/.minicpanrc' );
 
@@ -70,15 +71,18 @@ GetOptions(
 pod2usage(2) unless $config{local} and $config{remote};
 
 $|++;
+$config{dirmode} &&= oct($config{dirmode});
 
 CPAN::Mini->update_mirror(
-	remote => $config{remote},
-	local  => $config{local},
-	trace  => (not $config{quiet}),
-	force  => $config{force},
+	remote  => $config{remote},
+	local   => $config{local},
+	trace   => (not $config{quiet}),
+	force   => $config{force},
 	dirmode => $config{dirmode},
-	skip_perl => (not $config{perl}),
-	exact_mirror => ($config{exact_mirror}),
+	skip_perl      => (not $config{perl}),
+	exact_mirror   => ($config{exact_mirror}),
+	module_filters => ($config{module_filters}),
+	path_filters   => ($config{path_filters}),
 );
 
 =head1 CONFIGURATION FILE
