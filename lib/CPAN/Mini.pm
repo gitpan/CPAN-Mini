@@ -1,5 +1,5 @@
 package CPAN::Mini;
-our $VERSION = '0.30';
+our $VERSION = '0.32';
 
 use strict;
 use warnings;
@@ -10,9 +10,9 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.30
+version 0.32
 
- $Id: Mini.pm,v 1.16 2004/12/28 14:58:59 rjbs Exp $
+ $Id: Mini.pm,v 1.17 2004/12/31 20:49:04 rjbs Exp $
 
 =head1 SYNOPSIS
 
@@ -268,6 +268,7 @@ sub _filter_module {
 	if($self->{skip_perl}) {
 		return 1 if $args->{path} =~ m{/(?:emb|syb|bio)*perl-\d}i;
 		return 1 if $args->{path} =~ m{/(?:parrot|ponie)-\d}i;
+		return 1 if $args->{path} =~ m{/\bperl5\.004}i;
 	}
 
  if ($self->{path_filters}) {

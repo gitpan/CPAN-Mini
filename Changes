@@ -1,3 +1,6 @@
+0.32	2004-12-31 15:45
+      added an old alpha binary for perl to the perls to skip
+
 0.30  2004-12-28 10:00
       added a "new" method for construction
       update_mirror can act as class or instance method
