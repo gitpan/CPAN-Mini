@@ -1,3 +1,11 @@
+0.30  2004-12-28 10:00
+      added a "new" method for construction
+      update_mirror can act as class or instance method
+      added clean_file method
+
+0.26  2004-12-02 15:05
+      require version 5.6 of perl in Makefile.PL
+
 0.24  2004-11-29 14:30
       dirmode is correctly octalized (thanks SSORICHE)
       sungo's *_filters patch

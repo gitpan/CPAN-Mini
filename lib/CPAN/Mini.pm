@@ -1,5 +1,5 @@
 package CPAN::Mini;
-our $VERSION = '0.24';
+our $VERSION = '0.30';
 
 use strict;
 use warnings;
@@ -10,9 +10,9 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.24
+version 0.30
 
- $Id: Mini.pm,v 1.14 2004/11/29 21:06:32 rjbs Exp $
+ $Id: Mini.pm,v 1.16 2004/12/28 14:58:59 rjbs Exp $
 
 =head1 SYNOPSIS
 
@@ -73,8 +73,9 @@ use Compress::Zlib qw(gzopen $gzerrno);
 This is the only method that need be called from outside this module.  It will
 update the local mirror with the files from the remote mirror.   
 
-C<update_mirror> creates an ephemeral CPAN::Mini object on which other
-methods are called.  That object is used to store mirror location and state.
+If called as a class method, C<update_mirror> creates an ephemeral CPAN::Mini
+object on which other methods are called.  That object is used to store mirror
+location and state.
 
 This method returns the number of files updated.
 
@@ -129,9 +130,9 @@ distribution containing only modules with the word "Acme" in them:
 =cut
 
 sub update_mirror {
-	my $class    = shift;
-	my %defaults = (changes_made => 0, dirmode => 0711, mirrored => {});
-	my $self   = bless { %defaults, @_ } => $class;
+	my $self  = shift;
+	$self = $self->new(@_) unless ref $self;
+
 	croak "no local mirror supplied"  unless $self->{local};
 	croak "no remote mirror supplied" unless $self->{remote};
 
@@ -164,6 +165,20 @@ sub update_mirror {
 	# eliminate files we don't need
 	$self->clean_unmirrored;
 	return $self->{changes_made};
+}
+
+=head2 C<< new >>
+
+This method constructs a new CPAN::Mini object.  Its parameters are described
+above, under C<update_mirror>.
+
+=cut
+
+sub new {
+	my $class = shift;
+	my %defaults = (changes_made => 0, dirmode => 0711, mirrored => {});
+
+	bless { %defaults, @_ } => $class;
 }
 
 =head2 C<< mirror_indices >>
@@ -296,7 +311,7 @@ sub file_allowed {
 =head2 C<< clean_unmirrored >>
 
 This method finds any files in the local mirror which are no longer needed and
-removes them.
+calls the C<clean_file> method on them.
 
 =cut
 
@@ -305,11 +320,25 @@ sub clean_unmirrored {
 
 	find sub {
 		my $file = canonpath($File::Find::name);
-		return unless (-f $file and not $self->{mirrored}{$file});
-		return if $self->file_allowed($file);
-		$self->trace("$file ... removed\n");
-		unlink $file or warn "Cannot remove $file $!";
+		$self->clean_file($file);
 	}, $self->{local};
+}
+
+=head2 C<< clean_file($filename) >>
+
+This method, called by C<clean_unmirrored>, checks whether the named file
+exists.  If it exists, and was not mirrored, and C<file_allowed> doesn't say it
+can stay, the file is deleted.
+
+=cut
+
+sub clean_file {
+	my ($self, $file) = @_;
+
+	return unless (-f $file and not $self->{mirrored}{$file});
+	return if $self->file_allowed($file);
+	unless (unlink $file) { warn "$file ... cannot be removed: $!"; return; }
+	$self->trace("$file ... removed\n");
 }
 
 =head2 C<< trace( $message, $force ) >>
