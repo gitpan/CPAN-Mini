@@ -1,5 +1,5 @@
 package CPAN::Mini;
-our $VERSION = '0.14';
+our $VERSION = '0.16';
 
 use strict;
 use warnings;
@@ -10,9 +10,9 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.14
+version 0.16
 
- $Id: Mini.pm,v 1.7 2004/08/28 21:11:39 rjbs Exp $
+ $Id: Mini.pm,v 1.9 2004/09/08 01:46:27 rjbs Exp $
 
 =head1 SYNOPSIS
 
@@ -77,19 +77,22 @@ option is true, CPAN::Mini will print status messages as it runs.
 C<update_mirror> creates an ephemeral CPAN::Mini object on which other
 methods are called.  That object is used to store mirror location and state.
 
+The C<dirmode> option (generally an octal number) sets the permissions of
+created directories.  It defaults to 0711.
+
 This method returns the number of files updated.
 
 =cut
 
 sub update_mirror {
-	my $class  = shift;
-	my $self   = bless { changes_made => 0, mirrored => {}, @_ } => $class;
+	my $class    = shift;
+	my %defaults = (changes_made => 0, dirmode => 0711, mirrored => {});
+	my $self   = bless { %defaults, @_ } => $class;
 	croak "no local mirror supplied"  unless $self->{local};
 	croak "no remote mirror supplied" unless $self->{remote};
 
 	# mirrored tracks the already done, keyed by filename
 	# 1 = local-checked, 2 = remote-mirrored
-
 	$self->mirror_indices;
 	
 	return unless $self->{force} or $self->{changes_made};
@@ -155,19 +158,19 @@ sub mirror_file {
 		## upgrade to full mirror
 		$self->{mirrored}{$local_file} = 2;
 
-		mkpath(dirname($local_file), $self->{trace}, 0711);
-		print $path if $self->{trace};
+		mkpath(dirname($local_file), $self->{trace}, $self->{dirmode});
+		$self->trace($path);
 		my $status = mirror($remote_uri, $local_file);
 
 		if ($status == RC_OK) {
 			$checksum_might_be_up_to_date = 0;
-			print " ... updated\n" if $self->{trace};
+			$self->trace(" ... updated\n");
 			$self->{changes_made}++;
 		} elsif ($status != RC_NOT_MODIFIED) {
 			warn "\n$remote_uri: $status\n";
 			return;
 		} else {
-			print " ... up to date\n" if $self->{trace};
+			$self->trace(" ... up to date\n");
 		}
 	}
 
@@ -192,9 +195,22 @@ sub clean_unmirrored {
 
 	find sub {
 		return unless -f and not $self->{mirrored}{$File::Find::name};
-		print "$File::Find::name ... removed\n" if $self->{trace};
+		$self->trace("$File::Find::name ... removed\n");
 		unlink $_ or warn "Cannot remove $File::Find::name: $!";
 	}, $self->{local};
+}
+
+=head2 C<< trace( $message, $force ) >>
+
+If the object is mirroring verbosely, this method will print messages sent to
+it.  If CPAN::Mini is not operating in verbose mode, but C<$force> is true, it
+will print the message anyway.
+
+=cut
+
+sub trace {
+	my ($self, $message, $force) = @_;
+	print "$message" if $self->{trace} or $force;
 }
 
 =head1 SEE ALSO

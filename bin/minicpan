@@ -11,11 +11,12 @@ minicpan - uses CPAN::Mini to create or update a local mirror
  minicpan [options]
 
  Options
-   -l LOCAL   - where is the local minicpan?
-   -r REMOTE  - where is the remote cpan mirror?
-   -q         - run in quiet mode (don't print status)
+   -l LOCAL   - where is the local minicpan?     (required)
+   -r REMOTE  - where is the remote cpan mirror? (required)
+   -d ####    - permissions (numeric) to use when creating directories
    -f         - check all directories, even if indices are unchanged
    -p         - mirror perl, ponie, and parrot distributions
+   -q         - run in quiet mode (don't print status)
 
 =head1 DESCRIPTION
 
