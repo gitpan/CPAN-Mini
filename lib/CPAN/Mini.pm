@@ -1,5 +1,5 @@
 package CPAN::Mini;
-our $VERSION = '0.37_02';
+our $VERSION = '0.38';
 
 use strict;
 use warnings;
@@ -10,9 +10,9 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.37_02
+version 0.38
 
- $Id: /my/rjbs/code/minicpan/trunk/lib/CPAN/Mini.pm 14501 2005-09-06T04:24:37.553688Z rjbs  $
+ $Id: /my/rjbs/code/minicpan/trunk/lib/CPAN/Mini.pm 15281 2005-10-13T04:34:49.264423Z rjbs  $
 
 =head1 SYNOPSIS
 
@@ -334,8 +334,9 @@ sub file_allowed {
 
 =head2 C<< clean_unmirrored >>
 
-This method finds any files in the local mirror which are no longer needed and
-calls the C<clean_file> method on them.
+This method looks through the local mirror's files.  If it finds a file that
+neither belongs in the mirror nor is allowed (see the C<file_allowed> method),
+C<clean_file> is called on the file.
 
 =cut
 
@@ -344,28 +345,32 @@ sub clean_unmirrored {
 
 	find sub {
 		my $file = canonpath($File::Find::name);
-		$self->clean_file($file);
+    return unless (-f $file and not $self->{mirrored}{$file});
+    return if $self->file_allowed($file);
+    $self->trace("cleaning $file ...");
+		if ($self->clean_file($file)) {
+      $self->trace("done\n");
+    } else {
+      $self->trace("couldn't be cleaned\n");
+    }
 	}, $self->{local};
 }
 
 =head2 C<< clean_file($filename) >>
 
-This method, called by C<clean_unmirrored>, checks whether the named file
-exists.  If it exists, and was not mirrored, and C<file_allowed> doesn't say it
-can stay, the file is deleted.
+This method, called by C<clean_unmirrored>, deletes the named file.  It returns
+true if the file is successfully unlinked.  Otherwise, it returns false.
 
 =cut
 
 sub clean_file {
 	my ($self, $file) = @_;
 
-	return unless (-f $file and not $self->{mirrored}{$file});
-	return if $self->file_allowed($file);
 	unless (unlink $file) {
     warn "$file ... cannot be removed: $!" if $self->{errors};
     return;
   }
-	$self->trace("$file ... removed\n");
+  return 1;
 }
 
 =head2 C<< trace( $message, $force ) >>
