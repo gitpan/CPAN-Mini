@@ -1,5 +1,5 @@
 package CPAN::Mini;
-our $VERSION = '0.500';
+our $VERSION = '0.550';
 
 use strict;
 use warnings;
@@ -10,9 +10,9 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.500
+version 0.550
 
- $Id: /my/cs/projects/minicpan/trunk/lib/CPAN/Mini.pm 3924 2005-11-05T01:48:37.834491Z rjbs  $
+ $Id: /my/cs/projects/minicpan/trunk/lib/CPAN/Mini.pm 24759 2006-08-08T22:42:40.881515Z rjbs  $
 
 =head1 SYNOPSIS
 
@@ -47,21 +47,21 @@ the newest version of every distribution.  Those files are:
 
 =cut
 
-use Carp;
+use Carp ();
 
-use File::Path qw(mkpath);
-use File::Basename qw(basename dirname);
-use File::Spec::Functions qw(catfile canonpath);
-use File::Find qw(find);
+use File::Path ();
+use File::Basename ();
+use File::Spec ();
+use File::Find ();
 
 use URI ();
-use LWP::Simple qw(mirror RC_OK RC_NOT_MODIFIED);
+use LWP::Simple ();
 
-use Compress::Zlib qw(gzopen $gzerrno);
+use Compress::Zlib ();
 
 =head1 METHODS
 
-=head2 C<< update_mirror( %args ) >>
+=head2 update_mirror
 
  CPAN::Mini->update_mirror(
    remote => "http://cpan.mirrors.comintern.su",
@@ -122,13 +122,18 @@ setting would skip all distributions from RJBS and SUNGO:
 
 =item * C<module_filters>
 
-This options provides a set of rules for filtering modules.  It behaves like
+This option provides a set of rules for filtering modules.  It behaves like
 path_filters, but acts only on module names.  (Since most modules are in
 distributions with more than one module, this setting will probably be less
 useful than C<path_filters>.)  For example, this setting will skip any
 distribution containing only modules with the word "Acme" in them:
 
  module_filters => [ qr/Acme/i ]
+
+=item * C<also_mirror>
+
+This option should be an arrayref of extra files in the remote CPAN to mirror
+locally.
 
 =item * C<skip_cleanup>
 
@@ -150,8 +155,14 @@ sub update_mirror {
 	return unless $self->{force} or $self->{changes_made};
 
 	# now walk the packages list
-	my $details = catfile($self->{local}, qw(modules 02packages.details.txt.gz));
-	my $gz = gzopen($details, "rb") or die "Cannot open details: $gzerrno";
+	my $details = File::Spec->catfile(
+    $self->{local},
+    qw(modules 02packages.details.txt.gz)
+  );
+
+	my $gz = Compress::Zlib::gzopen($details, "rb")
+    or die "Cannot open details: $Compress::Zlib::gzerrno";
+
 	my $inheader = 1;
 	while ($gz->gzreadline($_) > 0) {
 		if ($inheader) {
@@ -174,7 +185,9 @@ sub update_mirror {
 	return $self->{changes_made};
 }
 
-=head2 C<< new >>
+=head2 new
+
+  my $minicpan = CPAN::Mini->new;
 
 This method constructs a new CPAN::Mini object.  Its parameters are described
 above, under C<update_mirror>.
@@ -192,23 +205,29 @@ sub new {
 
 	my $self = bless { %defaults, @_ } => $class;
 
-	croak "no local mirror supplied"  unless $self->{local};
-  croak "local mirror path exists but is not a directory"
+	Carp::croak "no local mirror supplied"  unless $self->{local};
+
+  substr($self->{local}, 0, 1, $class->__homedir)
+    if substr($self->{local}, 0, 1) eq '~';
+
+  Carp::croak "local mirror path exists but is not a directory"
     if (-e $self->{local}) and not (-d $self->{local});
 
-  mkpath($self->{local}, $self->{trace}, $self->{dirmode})
+  File::Path::mkpath($self->{local}, $self->{trace}, $self->{dirmode})
     unless -e $self->{local};
 
-  croak "no write permission to local mirror" unless -w $self->{local};
+  Carp::croak "no write permission to local mirror" unless -w $self->{local};
 
-	croak "no remote mirror supplied" unless $self->{remote};
-  croak "unable to contact the remote mirror"
+	Carp::croak "no remote mirror supplied" unless $self->{remote};
+  Carp::croak "unable to contact the remote mirror"
     unless LWP::Simple::head($self->{remote});
 
 	return $self;
 }
 
-=head2 C<< mirror_indices >>
+=head2 mirror_indices
+
+  $minicpan->mirror_indices;
 
 This method updates the index files from the CPAN.
 
@@ -223,10 +242,13 @@ sub mirror_indices {
 	    modules/03modlist.data.gz
     );
 
-	$self->mirror_file($_) for @fixed_mirrors, @{$self->{also_mirror}};
+  # XXX: Should the 0 be a 1, below? -- rjbs, 2006-08-08
+	$self->mirror_file($_, undef, 0) for @fixed_mirrors, @{$self->{also_mirror}};
 }
 
-=head2 C<< mirror_file($path, $skip_if_present) >>
+=head2 mirror_file
+
+  $minicpan->mirror_file($path, $skip_if_present)
 
 This method will mirror the given file from the remote to the local mirror,
 overwriting any existing file unless C<$skip_if_present> is true.
@@ -237,12 +259,13 @@ sub mirror_file {
 	my $self   = shift;
 	my $path   = shift;           # partial URL
 	my $skip_if_present = shift;  # true/false
+  my $update_times    = shift;  # true/false
 
   # full URL
 	my $remote_uri = URI->new_abs($path, $self->{remote})->as_string;
 
   # native absolute file
-	my $local_file = catfile($self->{local}, split "/", $path);
+	my $local_file = File::Spec->catfile($self->{local}, split "/", $path);
 
 	my $checksum_might_be_up_to_date = 1;
 
@@ -253,15 +276,21 @@ sub mirror_file {
 		## upgrade to full mirror
 		$self->{mirrored}{$local_file} = 2;
 
-		mkpath(dirname($local_file), $self->{trace}, $self->{dirmode});
-		$self->trace($path);
-		my $status = mirror($remote_uri, $local_file);
+		File::Path::mkpath(
+      File::Basename::dirname($local_file),
+      $self->{trace},
+      $self->{dirmode}
+    );
 
-		if ($status == RC_OK) {
+		$self->trace($path);
+		my $status = LWP::Simple::mirror($remote_uri, $local_file);
+
+		if ($status == LWP::Simple::RC_OK) {
+      utime undef, undef, $local_file if $update_times;
 			$checksum_might_be_up_to_date = 0;
 			$self->trace(" ... updated\n");
 			$self->{changes_made}++;
-		} elsif ($status != RC_NOT_MODIFIED) {
+		} elsif ($status != LWP::Simple::RC_NOT_MODIFIED) {
 			warn( ($self->{trace} ? "\n" : '')
         . "$remote_uri: $status\n") if $self->{errors};
 			return;
@@ -281,7 +310,10 @@ sub mirror_file {
 
 =begin devel
 
-=head2 C<< _filter_module({ module => $foo, version => $foo, path => $foo }) >>
+=head2 _filter_module
+
+ next if
+   $self->_filter_module({ module => $foo, version => $foo, path => $foo });
 
 This internal-only method encapsulates the logic where we figure out if a
 module is to be mirrored or not. Better stated, this method holds the filter
@@ -325,7 +357,9 @@ sub _filter_module {
 	return 0;
 }
 
-=head2 C<< file_allowed($file) >>
+=head2 file_allowed
+
+  next unless $minicpan->file_allowed($filename);
 
 This method returns true if the given file is allowed to exist in the local
 mirror, even if it isn't one of the required mirror files.
@@ -337,10 +371,12 @@ By default, only dot-files are allowed.
 sub file_allowed {
 	my ($self, $file) = @_;
 	return if $self->{exact_mirror};
-	return (substr(basename($file),0,1) eq '.') ? 1 : 0;
+	return (substr(File::Basename::basename($file),0,1) eq '.') ? 1 : 0;
 }
 
-=head2 C<< clean_unmirrored >>
+=head2 clean_unmirrored
+
+  $minicpan->clean_unmirrored;
 
 This method looks through the local mirror's files.  If it finds a file that
 neither belongs in the mirror nor is allowed (see the C<file_allowed> method),
@@ -351,8 +387,8 @@ C<clean_file> is called on the file.
 sub clean_unmirrored {
 	my $self = shift;
 
-	find sub {
-		my $file = canonpath($File::Find::name);
+	File::Find::find sub {
+		my $file = File::Spec->canonpath($File::Find::name);
     return unless (-f $file and not $self->{mirrored}{$file});
     return if $self->file_allowed($file);
     $self->trace("cleaning $file ...");
@@ -364,7 +400,9 @@ sub clean_unmirrored {
 	}, $self->{local};
 }
 
-=head2 C<< clean_file($filename) >>
+=head2 clean_file
+
+  $minicpan->clean_file($filename);
 
 This method, called by C<clean_unmirrored>, deletes the named file.  It returns
 true if the file is successfully unlinked.  Otherwise, it returns false.
@@ -381,7 +419,9 @@ sub clean_file {
   return 1;
 }
 
-=head2 C<< trace( $message ) >>
+=head2 trace
+
+  $minicpan->trace($message);
 
 If the object is mirroring verbosely, this method will print messages sent to
 it.
@@ -392,6 +432,55 @@ sub trace {
 	my ($self, $message) = @_;
 	print "$message" if $self->{trace};
 }
+
+=head2 read_config
+
+  my %config = CPAN::Mini->read_config;
+
+This routine returns a set of arguments that can be passed to CPAN::Mini's
+C<new> or C<update_mirror> methods.  It will look for a file called
+F<.minicpanrc> in the user's home directory as determined by
+L<File::HomeDir|File::HomeDir>.
+
+=cut
+
+sub __homedir {
+  my ($class) = @_;
+
+  my $homedir = File::HomeDir->my_home || $ENV{HOME};
+
+  Carp::croak "couldn't determine your home directory!  set HOME env variable"
+    unless defined $homedir;
+  
+  return $homedir;
+}
+
+sub read_config {
+  my ($class) = @_;
+
+  my $filename = File::Spec->catfile($class->__homedir, '.minicpanrc');
+
+  return unless -e $filename;
+
+  open my $config_file, '<', $filename
+    or die "couldn't open config file $filename: $!";
+  
+  my %config;
+  while (<$config_file>) { 
+    chomp;
+    next if /\A\s*\Z/sm;
+    if (/\A(\w+):\s*(.+)\Z/sm) { $config{$1} = $2; }
+  }
+  for (qw(also_mirror)) {
+    $config{$_} = [ grep { length } split /\s+/, $config{$_}] if $config{$_};
+  }
+  for (qw(module_filters path_filters)) {
+    $config{$_} = [ map { qr/$_/ } split /\s+/, $config{$_} ] if $config{$_};
+  }
+  return %config;
+}
+
+=head2 
 
 =head1 SEE ALSO
 
@@ -418,9 +507,11 @@ little design decisions.
 
 =head1 AUTHORS
 
-Randal Schwartz <F<merlyn@stonehenge.com>> did all the work. 
+Randal Schwartz <F<merlyn@stonehenge.com>> wrote the original F<minicpan>
+script.
 
-Ricardo SIGNES <F<rjbs@cpan.org>> made a module and distribution.
+Ricardo SIGNES <F<rjbs@cpan.org>> turned Randal's script into a module and CPAN
+distribution, and has maintained it since its release as such.
 
 This code was copyrighted in 2004, and is released under the same terms as Perl
 itself.
