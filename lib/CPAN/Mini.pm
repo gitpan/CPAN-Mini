@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 package CPAN::Mini;
-our $VERSION = '0.551';
+our $VERSION = '0.552';
 
 ## no critic RequireCarping
 
@@ -12,9 +12,9 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.551
+version 0.552
 
- $Id: /my/cs/projects/minicpan/trunk/lib/CPAN/Mini.pm 27919 2006-11-13T16:02:06.499727Z rjbs  $
+ $Id: /my/cs/projects/minicpan/trunk/lib/CPAN/Mini.pm 28751 2006-12-01T16:07:34.495420Z rjbs  $
 
 =head1 SYNOPSIS
 
@@ -89,6 +89,10 @@ The following options are recognized:
 
 Generally an octal number, this option sets the permissions of created
 directories.  It defaults to 0711.
+
+=item * C<exact_mirror>
+
+If true, the C<files_allowed> method will allow all extra files to be mirrored.
 
 =item * C<force>
 
@@ -366,7 +370,8 @@ sub _filter_module {
 This method returns true if the given file is allowed to exist in the local
 mirror, even if it isn't one of the required mirror files.
 
-By default, only dot-files are allowed.
+By default, only dot-files are allowed.  If the C<exact_mirror> option is true,
+all files are allowed.
 
 =cut
 
@@ -506,6 +511,9 @@ bioperl, and Robert Rothenberg for suggesting adding coderef rules.
 
 Thanks to Adam Kennedy for noticing and complaining about a lot of stupid
 little design decisions.
+
+Thanks to Michael Schwern and Jason Kohles, for pointing out missing
+documentation.
 
 =head1 AUTHORS
 

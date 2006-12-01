@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                CPAN-Mini
-version:             0.551
+version:             0.552
 abstract:            ~
 license:             perl
 generated_by:        ExtUtils::MakeMaker version 6.31
