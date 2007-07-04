@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 package CPAN::Mini;
-our $VERSION = '0.560_01';
+our $VERSION = '0.561';
 
 ## no critic RequireCarping
 
@@ -12,9 +12,9 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.560_01
+version 0.561
 
- $Id: /my/cs/projects/CPAN-Mini/trunk/lib/CPAN/Mini.pm 31471 2007-04-25T12:45:07.318475Z rjbs  $
+ $Id: /my/cs/projects/CPAN-Mini/trunk/lib/CPAN/Mini.pm 31959 2007-07-03T22:19:46.365486Z rjbs  $
 
 =head1 SYNOPSIS
 
@@ -406,9 +406,11 @@ sub _filter_module {
 	my $args = shift;
 
 	if ($self->{skip_perl}) {
-		return 1 if $args->{path} =~ m{/(?:emb|syb|bio)*perl-\d}i;
+		return 1 if $args->{path} =~ m{/(?:emb|syb|bio)?perl-\d}i;
 		return 1 if $args->{path} =~ m{/(?:parrot|ponie)-\d}i;
-		return 1 if $args->{path} =~ m{/\bperl5\.004}i;
+		return 1 if $args->{path} =~ m{/(?:kurila)-\d}i;
+		return 1 if $args->{path} =~ m{/\bperl-5\.004}i;
+		return 1 if $args->{path} =~ m{/\bperl_mlb\.zip}i;
 	}
 
 	return 1 if $self->__do_filter($self->{path_filters}, $args->{path});
