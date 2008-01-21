@@ -20,4 +20,4 @@ requires:
   Pod::Usage: 1.00
   URI: 1
   perl: 5.6.0
-version: 0.565
+version: 0.566
