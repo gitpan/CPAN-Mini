@@ -20,4 +20,5 @@ requires:
   Pod::Usage: 1.00
   URI: 1
   perl: 5.6.0
-version: 0.567
+tests: t/*.t xt/*.t
+version: 0.568
