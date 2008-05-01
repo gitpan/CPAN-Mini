@@ -21,4 +21,5 @@ requires:
   URI: 1
   perl: 5.6.0
 tests: t/*.t xt/*.t
-version: 0.568
+version: 0.569
+

@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 package CPAN::Mini;
-our $VERSION = '0.568';
+our $VERSION = '0.569';
 
 ## no critic RequireCarping
 
@@ -13,7 +13,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.568
+version 0.569
 
 =head1 SYNOPSIS
 
@@ -58,7 +58,7 @@ use File::Spec ();
 use File::Temp ();
 
 use URI ();
-use LWP::Simple ();
+use LWP::UserAgent ();
 
 use Compress::Zlib ();
 
@@ -147,6 +147,10 @@ locally.
 If this option is true, CPAN::Mini will not try delete unmirrored files when it
 has finished mirroring
 
+=item * C<offline>
+
+If offline, CPAN::Mini will not attempt to contact remote resources.
+
 =back
 
 =cut
@@ -155,22 +159,25 @@ sub update_mirror {
   my $self = shift;
   $self = $self->new(@_) unless ref $self;
 
-  # mirrored tracks the already done, keyed by filename
-  # 1 = local-checked, 2 = remote-mirrored
-  $self->mirror_indices;
+  unless ($self->{offline}) {
+    # mirrored tracks the already done, keyed by filename
+    # 1 = local-checked, 2 = remote-mirrored
+    $self->mirror_indices;
 
-  return unless $self->{force} or $self->{changes_made};
+    return unless $self->{force} or $self->{changes_made};
 
-  # mirror all the files
-  $self->_mirror_extras;
-  $self->mirror_file($_, 1) for @{ $self->_get_mirror_list };
+    # mirror all the files
+    $self->_mirror_extras;
+    $self->mirror_file($_, 1) for @{ $self->_get_mirror_list };
 
-  # install indices after files are mirrored in case we're interrupted
-  # so indices will seem new again when continuing
-  $self->_install_indices;
+    # install indices after files are mirrored in case we're interrupted
+    # so indices will seem new again when continuing
+    $self->_install_indices;
 
-  # eliminate files we don't need
-  $self->clean_unmirrored unless $self->{skip_cleanup};
+    # eliminate files we don't need
+    $self->clean_unmirrored unless $self->{skip_cleanup};
+  }
+
   return $self->{changes_made};
 }
 
@@ -246,11 +253,18 @@ sub new {
 
   $self->{remote} = "$self->{remote}/" if substr($self->{remote}, -1) ne '/';
 
+  $self->{__lwp} = LWP::UserAgent->new(
+    agent      => "$class/" . $class->VERSION,
+    keep_alive => 5,
+  );
+
   Carp::croak "unable to contact the remote mirror"
-    unless LWP::Simple::head($self->{remote});
+    unless eval { $self->__lwp->head($self->{remote})->is_success };
 
   return $self;
 }
+
+sub __lwp { $_[0]->{__lwp} }
 
 =head2 mirror_indices
 
@@ -365,15 +379,15 @@ sub mirror_file {
       $self->{trace}, $self->{dirmode});
 
     $self->trace($path);
-    my $status = LWP::Simple::mirror($remote_uri, $local_file);
+    my $res = $self->{__lwp}->mirror($remote_uri, $local_file);
 
-    if ($status == LWP::Simple::RC_OK) {
+    if ($res->is_success) {
       utime undef, undef, $local_file if $arg->{update_times};
       $checksum_might_be_up_to_date = 0;
       $self->trace(" ... updated\n");
       $self->{changes_made}++;
-    } elsif ($status != LWP::Simple::RC_NOT_MODIFIED) {
-      warn(($self->{trace} ? "\n" : q{}) . "$remote_uri: $status\n")
+    } elsif ($res->code != 304) { # not modified
+      warn(($self->{trace} ? "\n" : q{}) . "$remote_uri: " . $res->status_line .  "\n")
         if $self->{errors};
       return;
     } else {
@@ -541,11 +555,19 @@ sub __homedir {
   return $homedir;
 }
 
+sub __default_configfile {
+  my ($self) = @_;
+
+  (my $pm_loc = $INC{'CPAN/Mini.pm'}) =~ s/Mini\.pm\z//;
+  File::Spec->catfile($pm_loc, 'minicpan.conf');
+}
+
 sub read_config {
   my ($class) = @_;
 
   my $filename = File::Spec->catfile($class->__homedir, '.minicpanrc');
 
+  $filename = $class->__default_configfile unless -e $filename;
   return unless -e $filename;
 
   open my $config_file, '<', $filename
