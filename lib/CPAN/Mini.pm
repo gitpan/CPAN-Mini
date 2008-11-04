@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 package CPAN::Mini;
-our $VERSION = '0.571';
+our $VERSION = '0.572';
 
 ## no critic RequireCarping
 
@@ -13,7 +13,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.571
+version 0.572
 
 =head1 SYNOPSIS
 
@@ -52,6 +52,7 @@ use Carp ();
 
 use File::Basename ();
 use File::Copy ();
+use File::HomeDir ();
 use File::Find ();
 use File::Path ();
 use File::Spec ();
@@ -580,7 +581,7 @@ sub read_config {
   while (<$config_file>) {
     chomp;
     next if /\A\s*\Z/sm;
-    if (/\A(\w+):\s*(.+)\Z/sm) { $config{$1} = $2; }
+    if (/\A(\w+):\s*(\S.*?)\s*\Z/sm) { $config{$1} = $2; }
   }
 
   for (qw(also_mirror)) {

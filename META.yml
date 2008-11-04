@@ -1,27 +1,25 @@
---- 
-abstract: create a minimal mirror of CPAN
-author: 
-  - Ricardo SIGNES <rjbs@cpan.org>
+---
+abstract: 'create a minimal mirror of CPAN'
+author:
+  - 'Ricardo SIGNES <rjbs@cpan.org>'
 distribution_type: module
-generated_by: Module::Install version 0.68
+generated_by: 'Module::Install version 0.77'
 license: perl
-meta-spec: 
-  url: http://module-build.sourceforge.net/META-spec-v1.3.html
-  version: 1.3
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
 name: CPAN-Mini
-no_index: 
-  directory: 
+no_index:
+  directory:
     - inc
     - t
-requires: 
+requires:
   Compress::Zlib: 1.20
   File::HomeDir: 0.57
   LWP: 5
   Pod::Usage: 1.00
   URI: 1
   perl: 5.6.0
-tests: t/*.t xt/*.t
-version: 0.571
-
-
-
+resources:
+  license: http://dev.perl.org/licenses/
+version: 0.572
