@@ -16,10 +16,11 @@ no_index:
 requires:
   Compress::Zlib: 1.20
   File::HomeDir: 0.57
+  File::Spec: 2.04
   LWP: 5
   Pod::Usage: 1.00
   URI: 1
   perl: 5.6.0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.572
+version: 0.573
