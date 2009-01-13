@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 package CPAN::Mini;
-our $VERSION = '0.574';
+our $VERSION = '0.575';
 
 ## no critic RequireCarping
 
@@ -13,7 +13,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 0.574
+version 0.575
 
 =head1 SYNOPSIS
 
@@ -152,6 +152,11 @@ has finished mirroring
 
 If offline, CPAN::Mini will not attempt to contact remote resources.
 
+=item * C<no_conn_cache>
+
+If true, no connection cache will be established.  This is mostly useful as a
+workaround for connection cache failures.
+
 =back
 
 =cut
@@ -286,7 +291,7 @@ sub new {
   $self->{__lwp} = LWP::UserAgent->new(
     agent      => "$class/" . $class->VERSION,
     env_proxy  => 1,
-    keep_alive => 5,
+    ($self->{no_conn_cache} ? () : (keep_alive => 5)),
   );
 
   unless ($self->{offline}) {
