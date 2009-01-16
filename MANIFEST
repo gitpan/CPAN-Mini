@@ -1,6 +1,7 @@
 bin/minicpan
 Changes
 inc/Module/Install.pm
+inc/Module/Install/AutoManifest.pm
 inc/Module/Install/Base.pm
 inc/Module/Install/Can.pm
 inc/Module/Install/ExtraTests.pm
