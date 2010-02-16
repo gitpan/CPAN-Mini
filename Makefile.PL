@@ -1,26 +1,50 @@
-use 5.006;
+
 use strict;
 use warnings;
 
-use inc::Module::Install;
 
-name          ('CPAN-Mini');
-author        ('Ricardo SIGNES <rjbs@cpan.org>');
-license       ('perl');
-all_from      ('lib/CPAN/Mini.pm');
 
-requires(URI => 1);
-requires(LWP => 5);
-requires('Compress::Zlib' => '1.20');
-requires('File::Path'     => '2.04'); # new interface, bugfixes
-requires('File::HomeDir'  => '0.57'); # Win32 Support
-requires('Pod::Usage'     => '1.00');
+use ExtUtils::MakeMaker 6.11;
 
-extra_tests;
 
-install_script('bin/minicpan');
 
-repository('http://github.com/rjbs/cpan-mini');
-auto_manifest;
+my %WriteMakefileArgs = (
+                       'test' => {
+                                   'TESTS' => 't/*.t'
+                                 },
+                       'NAME' => 'CPAN::Mini',
+                       'DISTNAME' => 'CPAN-Mini',
+                       'AUTHOR' => 'Ricardo SIGNES <rjbs@cpan.org>, Randal Schwartz <merlyn@stonehenge.com>',
+                       'ABSTRACT' => 'create a minimal mirror of CPAN',
+                       'EXE_FILES' => [
+                                        'bin/minicpan'
+                                      ],
+                       'VERSION' => '1.100470_001',
+                       'LICENSE' => 'perl',
+                       'PREREQ_PM' => {
+                                        'File::Copy' => 0,
+                                        'Getopt::Long' => 0,
+                                        'Compress::Zlib' => '1.20',
+                                        'URI' => '1',
+                                        'Pod::Usage' => '1.00',
+                                        'File::HomeDir' => '0.57',
+                                        'ExtUtils::MakeMaker' => '6.11',
+                                        'File::Spec' => 0,
+                                        'Carp' => 0,
+                                        'Test::More' => 0,
+                                        'LWP::UserAgent' => '5',
+                                        'File::Find' => 0,
+                                        'File::Temp' => 0,
+                                        'File::Path' => '2.04',
+                                        'File::Basename' => 0
+                                      }
+                     );
 
-WriteAll();
+
+delete $WriteMakefileArgs{LICENSE}
+  unless eval { ExtUtils::MakeMaker->VERSION(6.31) };
+
+WriteMakefile(%WriteMakefileArgs);
+
+
+

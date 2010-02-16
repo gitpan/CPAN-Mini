@@ -1,165 +1,28 @@
 use 5.006;
 use strict;
 use warnings;
-
 package CPAN::Mini;
-our $VERSION = '0.576';
+our $VERSION = '1.100470_001';
+# ABSTRACT: create a minimal mirror of CPAN
 
 ## no critic RequireCarping
 
-=head1 NAME
-
-CPAN::Mini - create a minimal mirror of CPAN
-
-=head1 VERSION
-
-version 0.576
-
-=head1 SYNOPSIS
-
-(If you're not going to do something weird, you probably want to look at the
-L<minicpan> command, instead.)
-
- use CPAN::Mini;
-
- CPAN::Mini->update_mirror(
-   remote => "http://cpan.mirrors.comintern.su",
-   local  => "/usr/share/mirrors/cpan",
-   trace  => 1
- );
-
-=head1 DESCRIPTION
-
-CPAN::Mini provides a simple mechanism to build and update a minimal mirror of
-the CPAN on your local disk.  It contains only those files needed to install
-the newest version of every distribution.  Those files are:
-
-=over 4
-
-=item * 01mailrc.txt.gz
-
-=item * 02packages.details.txt.gz
-
-=item * 03modlist.data.gz
-
-=item * the last non-developer release of every dist for every author
-
-=back
-
-=cut
 
 use Carp ();
 
 use File::Basename ();
 use File::Copy ();
-use File::HomeDir ();
+use File::HomeDir 0.57 (); # Win32 support
 use File::Find ();
-use File::Path 2.04 ();
+use File::Path 2.04 (); # new API, bugfixes
 use File::Spec ();
 use File::Temp ();
 
-use URI ();
-use LWP::UserAgent ();
+use URI 1 ();
+use LWP::UserAgent 5 ();
 
-use Compress::Zlib ();
+use Compress::Zlib 1.20 ();
 
-=head1 METHODS
-
-=head2 update_mirror
-
- CPAN::Mini->update_mirror(
-   remote => "http://cpan.mirrors.comintern.su",
-   local  => "/usr/share/mirrors/cpan",
-   force  => 0,
-   trace  => 1
- );
-
-This is the only method that need be called from outside this module.  It will
-update the local mirror with the files from the remote mirror.   
-
-If called as a class method, C<update_mirror> creates an ephemeral CPAN::Mini
-object on which other methods are called.  That object is used to store mirror
-location and state.
-
-This method returns the number of files updated.
-
-The following options are recognized:
-
-=over 4
-
-=item * C<dirmode>
-
-Generally an octal number, this option sets the permissions of created
-directories.  It defaults to 0711.
-
-=item * C<exact_mirror>
-
-If true, the C<files_allowed> method will allow all extra files to be mirrored.
-
-=item * C<force>
-
-If true, this option will cause CPAN::Mini to read the entire module list and
-update anything out of date, even if the module list itself wasn't out of date
-on this run.
-
-=item * C<skip_perl>
-
-If true, CPAN::Mini will skip the major language distributions: perl, parrot,
-and ponie.
-
-=item * C<trace>
-
-If true, CPAN::Mini will print status messages to STDOUT as it works.
-
-=item * C<errors>
-
-If true, CPAN::Mini will warn with status messages on errors.  (default: true)
-
-=item * C<path_filters>
-
-This options provides a set of rules for filtering paths.  If a distribution
-matches one of the rules in C<path_filters>, it will not be mirrored.  A regex
-rule is matched if the path matches the regex; a code rule is matched if the
-code returns 1 when the path is passed to it.  For example, the following
-setting would skip all distributions from RJBS and SUNGO:
-
- path_filters => [
-   qr/RJBS/,
-   sub { $_[0] =~ /SUNGO/ }
- ]
-
-=item * C<module_filters>
-
-This option provides a set of rules for filtering modules.  It behaves like
-path_filters, but acts only on module names.  (Since most modules are in
-distributions with more than one module, this setting will probably be less
-useful than C<path_filters>.)  For example, this setting will skip any
-distribution containing only modules with the word "Acme" in them:
-
- module_filters => [ qr/Acme/i ]
-
-=item * C<also_mirror>
-
-This option should be an arrayref of extra files in the remote CPAN to mirror
-locally.
-
-=item * C<skip_cleanup>
-
-If this option is true, CPAN::Mini will not try delete unmirrored files when it
-has finished mirroring
-
-=item * C<offline>
-
-If offline, CPAN::Mini will not attempt to contact remote resources.
-
-=item * C<no_conn_cache>
-
-If true, no connection cache will be established.  This is mostly useful as a
-workaround for connection cache failures.
-
-=back
-
-=cut
 
 sub update_mirror {
   my $self = shift;
@@ -238,14 +101,6 @@ sub _get_mirror_list {
   return [ sort keys %mirror_list ];
 }
 
-=head2 new
-
-  my $minicpan = CPAN::Mini->new;
-
-This method constructs a new CPAN::Mini object.  Its parameters are described
-above, under C<update_mirror>.
-
-=cut
 
 sub new {
   my $class    = shift;
@@ -304,13 +159,6 @@ sub new {
 
 sub __lwp { $_[0]->{__lwp} }
 
-=head2 mirror_indices
-
-  $minicpan->mirror_indices;
-
-This method updates the index files from the CPAN.
-
-=cut
 
 sub _fixed_mirrors {
   qw(
@@ -378,14 +226,6 @@ sub _install_indices {
   }
 }
 
-=head2 mirror_file
-
-  $minicpan->mirror_file($path, $skip_if_present)
-
-This method will mirror the given file from the remote to the local mirror,
-overwriting any existing file unless C<$skip_if_present> is true.
-
-=cut
 
 sub mirror_file {
   my ($self, $path, $skip_if_present, $arg) = @_;
@@ -449,23 +289,6 @@ sub mirror_file {
   }
 }
 
-=begin devel
-
-=head2 _filter_module
-
- next
-   if $self->_filter_module({ module => $foo, version => $foo, path => $foo });
-
-This method holds the filter chain logic. C<update_mirror> takes an optional
-set of filter parameters.  As C<update_mirror> encounters a distribution, it
-calls this method to figure out whether or not it should be downloaded. The
-user provided filters are taken into account. Returns 1 if the distribution is
-filtered (to be skipped).  Returns 0 if the distribution is to not filtered
-(not to be skipped).
-
-=end devel
-
-=cut
 
 sub __do_filter {
   my ($self, $filter, $file) = @_;
@@ -499,17 +322,6 @@ sub _filter_module {
   return 0;
 }
 
-=head2 file_allowed
-
-  next unless $minicpan->file_allowed($filename);
-
-This method returns true if the given file is allowed to exist in the local
-mirror, even if it isn't one of the required mirror files.
-
-By default, only dot-files are allowed.  If the C<exact_mirror> option is true,
-all files are allowed.
-
-=cut
 
 sub file_allowed {
   my ($self, $file) = @_;
@@ -521,15 +333,6 @@ sub file_allowed {
   return (substr(File::Basename::basename($file), 0, 1) eq q{.}) ? 1 : 0;
 }
 
-=head2 clean_unmirrored
-
-  $minicpan->clean_unmirrored;
-
-This method looks through the local mirror's files.  If it finds a file that
-neither belongs in the mirror nor is allowed (see the C<file_allowed> method),
-C<clean_file> is called on the file.
-
-=cut
 
 sub clean_unmirrored {
   my $self = shift;
@@ -547,14 +350,6 @@ sub clean_unmirrored {
   }, $self->{local};
 }
 
-=head2 clean_file
-
-  $minicpan->clean_file($filename);
-
-This method, called by C<clean_unmirrored>, deletes the named file.  It returns
-true if the file is successfully unlinked.  Otherwise, it returns false.
-
-=cut
 
 sub clean_file {
   my ($self, $file) = @_;
@@ -567,30 +362,12 @@ sub clean_file {
   return 1;
 }
 
-=head2 trace
-
-  $minicpan->trace($message);
-
-If the object is mirroring verbosely, this method will print messages sent to
-it.
-
-=cut
 
 sub trace {
   my ($self, $message) = @_;
   print $message if $self->{trace};
 }
 
-=head2 read_config
-
-  my %config = CPAN::Mini->read_config;
-
-This routine returns a set of arguments that can be passed to CPAN::Mini's
-C<new> or C<update_mirror> methods.  It will look for a file called
-F<.minicpanrc> in the user's home directory as determined by
-L<File::HomeDir|File::HomeDir>.
-
-=cut
 
 sub __homedir {
   my ($class) = @_;
@@ -639,7 +416,255 @@ sub read_config {
   return %config;
 }
 
-=head2 
+
+1;
+
+__END__
+=pod
+
+=head1 NAME
+
+CPAN::Mini - create a minimal mirror of CPAN
+
+=head1 VERSION
+
+version 1.100470_001
+
+=head1 SYNOPSIS
+
+(If you're not going to do something weird, you probably want to look at the
+L<minicpan> command, instead.)
+
+ use CPAN::Mini;
+
+ CPAN::Mini->update_mirror(
+   remote => "http://cpan.mirrors.comintern.su",
+   local  => "/usr/share/mirrors/cpan",
+   trace  => 1
+ );
+
+=head1 DESCRIPTION
+
+CPAN::Mini provides a simple mechanism to build and update a minimal mirror of
+the CPAN on your local disk.  It contains only those files needed to install
+the newest version of every distribution.  Those files are:
+
+=over 4
+
+=item *
+
+01mailrc.txt.gz
+
+=item *
+
+02packages.details.txt.gz
+
+=item *
+
+03modlist.data.gz
+
+=item *
+
+the last non-developer release of every dist for every author
+
+=back
+
+=head1 METHODS
+
+=head2 update_mirror
+
+ CPAN::Mini->update_mirror(
+   remote => "http://cpan.mirrors.comintern.su",
+   local  => "/usr/share/mirrors/cpan",
+   force  => 0,
+   trace  => 1
+ );
+
+This is the only method that need be called from outside this module.  It will
+update the local mirror with the files from the remote mirror.   
+
+If called as a class method, C<update_mirror> creates an ephemeral CPAN::Mini
+object on which other methods are called.  That object is used to store mirror
+location and state.
+
+This method returns the number of files updated.
+
+The following options are recognized:
+
+=over 4
+
+=item *
+
+C<dirmode>
+
+Generally an octal number, this option sets the permissions of created
+directories.  It defaults to 0711.
+
+=item *
+
+C<exact_mirror>
+
+If true, the C<files_allowed> method will allow all extra files to be mirrored.
+
+=item *
+
+C<force>
+
+If true, this option will cause CPAN::Mini to read the entire module list and
+update anything out of date, even if the module list itself wasn't out of date
+on this run.
+
+=item *
+
+C<skip_perl>
+
+If true, CPAN::Mini will skip the major language distributions: perl, parrot,
+and ponie.
+
+=item *
+
+C<trace>
+
+If true, CPAN::Mini will print status messages to STDOUT as it works.
+
+=item *
+
+C<errors>
+
+If true, CPAN::Mini will warn with status messages on errors.  (default: true)
+
+=item *
+
+C<path_filters>
+
+This options provides a set of rules for filtering paths.  If a distribution
+matches one of the rules in C<path_filters>, it will not be mirrored.  A regex
+rule is matched if the path matches the regex; a code rule is matched if the
+code returns 1 when the path is passed to it.  For example, the following
+setting would skip all distributions from RJBS and SUNGO:
+
+ path_filters => [
+   qr/RJBS/,
+   sub { $_[0] =~ /SUNGO/ }
+ ]
+
+=item *
+
+C<module_filters>
+
+This option provides a set of rules for filtering modules.  It behaves like
+path_filters, but acts only on module names.  (Since most modules are in
+distributions with more than one module, this setting will probably be less
+useful than C<path_filters>.)  For example, this setting will skip any
+distribution containing only modules with the word "Acme" in them:
+
+ module_filters => [ qr/Acme/i ]
+
+=item *
+
+C<also_mirror>
+
+This option should be an arrayref of extra files in the remote CPAN to mirror
+locally.
+
+=item *
+
+C<skip_cleanup>
+
+If this option is true, CPAN::Mini will not try delete unmirrored files when it
+has finished mirroring
+
+=item *
+
+C<offline>
+
+If offline, CPAN::Mini will not attempt to contact remote resources.
+
+=item *
+
+C<no_conn_cache>
+
+If true, no connection cache will be established.  This is mostly useful as a
+workaround for connection cache failures.
+
+=back
+
+=head2 new
+
+  my $minicpan = CPAN::Mini->new;
+
+This method constructs a new CPAN::Mini object.  Its parameters are described
+above, under C<update_mirror>.
+
+=head2 mirror_indices
+
+  $minicpan->mirror_indices;
+
+This method updates the index files from the CPAN.
+
+=head2 mirror_file
+
+  $minicpan->mirror_file($path, $skip_if_present)
+
+This method will mirror the given file from the remote to the local mirror,
+overwriting any existing file unless C<$skip_if_present> is true.
+
+=head2 file_allowed
+
+  next unless $minicpan->file_allowed($filename);
+
+This method returns true if the given file is allowed to exist in the local
+mirror, even if it isn't one of the required mirror files.
+
+By default, only dot-files are allowed.  If the C<exact_mirror> option is true,
+all files are allowed.
+
+=head2 clean_unmirrored
+
+  $minicpan->clean_unmirrored;
+
+This method looks through the local mirror's files.  If it finds a file that
+neither belongs in the mirror nor is allowed (see the C<file_allowed> method),
+C<clean_file> is called on the file.
+
+=head2 clean_file
+
+  $minicpan->clean_file($filename);
+
+This method, called by C<clean_unmirrored>, deletes the named file.  It returns
+true if the file is successfully unlinked.  Otherwise, it returns false.
+
+=head2 trace
+
+  $minicpan->trace($message);
+
+If the object is mirroring verbosely, this method will print messages sent to
+it.
+
+=head2 read_config
+
+  my %config = CPAN::Mini->read_config;
+
+This routine returns a set of arguments that can be passed to CPAN::Mini's
+C<new> or C<update_mirror> methods.  It will look for a file called
+F<.minicpanrc> in the user's home directory as determined by
+L<File::HomeDir|File::HomeDir>.
+
+=begin devel
+
+=method _filter_module
+
+ next
+   if $self->_filter_module({ module => $foo, version => $foo, path => $foo });
+
+This method holds the filter chain logic. C<update_mirror> takes an optional
+set of filter parameters.  As C<update_mirror> encounters a distribution, it
+calls this method to figure out whether or not it should be downloaded. The
+user provided filters are taken into account. Returns 1 if the distribution is
+filtered (to be skipped).  Returns 0 if the distribution is to not filtered
+(not to be skipped).
+
+=end devel
 
 =head1 SEE ALSO
 
@@ -671,15 +696,15 @@ Thanks to David Golden for some important bugfixes and refactoring.
 
 =head1 AUTHORS
 
-Randal Schwartz <F<merlyn@stonehenge.com>> wrote the original F<minicpan>
-script.
+  Ricardo SIGNES <rjbs@cpan.org>
+  Randal Schwartz <merlyn@stonehenge.com>
 
-Ricardo SIGNES <F<rjbs@cpan.org>> turned Randal's script into a module and CPAN
-distribution, and has maintained it since its release as such.
+=head1 COPYRIGHT AND LICENSE
 
-This code was copyrighted in 2004, and is released under the same terms as Perl
-itself.
+This software is copyright (c) 2010 by Ricardo SIGNES.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
 
 =cut
 
-1;

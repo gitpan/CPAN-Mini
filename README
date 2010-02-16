@@ -1,10 +1,12 @@
-README for CPAN::Mini 0.576
 
-CPAN::Mini provides a simple mechanism to build and update a minimal mirror of
-the CPAN on your local disk.  It contains only those files needed to install
-the newest version of every distribution.  Those files are:
 
-	* 01mailrc.txt.gz
-	* 02packages.details.txt.gz
-	* 03modlist.data.gz
-	* the last non-developer release of every dist for every author
+This archive contains the distribution CPAN-Mini, version
+1.100470_001:
+
+  create a minimal mirror of CPAN
+
+This software is copyright (c) 2010 by Ricardo SIGNES.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+

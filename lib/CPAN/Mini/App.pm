@@ -1,26 +1,15 @@
-
 use strict;
 use warnings;
-
 package CPAN::Mini::App;
+our $VERSION = '1.100470_001';
+# ABSTRACT: the guts of the minicpan command
 
-=head1 NAME
-
-CPAN::Mini::App - the guts of the minicpan command
-
-=head1 SYNOPSIS
-
-  #!/usr/bin/perl
-  use CPAN::Mini::App;
-  CPAN::Mini::App->run;
-
-=cut
 
 use CPAN::Mini;
 use File::HomeDir;
 use File::Spec;
 use Getopt::Long qw(GetOptions);
-use Pod::Usage;
+use Pod::Usage 1.00;
 
 sub _display_version {
   my $class = shift;
@@ -31,12 +20,6 @@ sub _display_version {
   exit;
 }
 
-=head2 run
-
-This method is called by F<minicpan> to do all the work.  Don't rely on what it
-does just yet.
-
-=cut
 
 sub run {
   my %config = CPAN::Mini->read_config;
@@ -84,6 +67,33 @@ sub run {
   );
 }
 
+
+1;
+
+__END__
+=pod
+
+=head1 NAME
+
+CPAN::Mini::App - the guts of the minicpan command
+
+=head1 VERSION
+
+version 1.100470_001
+
+=head1 SYNOPSIS
+
+  #!/usr/bin/perl
+  use CPAN::Mini::App;
+  CPAN::Mini::App->run;
+
+=head1 METHODS
+
+=head2 run
+
+This method is called by F<minicpan> to do all the work.  Don't rely on what it
+does just yet.
+
 =head1 SEE ALSO 
 
 Randal Schwartz's original article, which can be found here:
@@ -92,12 +102,15 @@ Randal Schwartz's original article, which can be found here:
 
 =head1 AUTHORS
 
-Randal Schwartz <F<merlyn@stonehenge.com>>
+  Ricardo SIGNES <rjbs@cpan.org>
+  Randal Schwartz <merlyn@stonehenge.com>
 
-Ricardo SIGNES <F<rjbs@cpan.org>>
+=head1 COPYRIGHT AND LICENSE
 
-Copyright 2004, released under the same terms as Perl itself.
+This software is copyright (c) 2010 by Ricardo SIGNES.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
 
 =cut
 
-1;
