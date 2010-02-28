@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 package CPAN::Mini;
-our $VERSION = '1.100590';
+our $VERSION = '1.100591';
 
 # ABSTRACT: create a minimal mirror of CPAN
 
@@ -336,7 +336,7 @@ sub _filter_module {
 
 sub file_allowed {
   my ($self, $file) = @_;
-  return if $self->{exact_mirror};
+  return 1 if $self->{exact_mirror};
 
   # It's a cheap hack, but it gets the job done.
   return 1 if $file eq File::Spec->catfile($self->{local}, 'RECENT');
@@ -345,19 +345,37 @@ sub file_allowed {
 }
 
 
+my %Source_control_files;
+BEGIN {
+  %Source_control_files = map { $_ => 1 }
+    qw(.cvs .svn .git .cvsignore .svnignore .gitignore);
+}
+
 sub clean_unmirrored {
   my $self = shift;
 
   File::Find::find sub {
     my $file = File::Spec->canonpath($File::Find::name);  ## no critic Package
+    my $basename = basename( $file );
+
+    if (
+      $self->{ignore_source_control}
+      and exists $Source_control_files{$basename}
+    ) {
+      $File::Find::prune = 1;
+      return;
+    }
+
     return unless (-f $file and not $self->{mirrored}{$file});
     return if $self->file_allowed($file);
     $self->trace("cleaning $file ...");
+
     if ($self->clean_file($file)) {
       $self->trace("done\n");
     } else {
       $self->trace("couldn't be cleaned\n");
     }
+
   }, $self->{local};
 }
 
@@ -495,7 +513,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 1.100590
+version 1.100591
 
 =head1 SYNOPSIS
 
@@ -572,6 +590,13 @@ directories.  It defaults to 0711.
 C<exact_mirror>
 
 If true, the C<files_allowed> method will allow all extra files to be mirrored.
+
+=item *
+
+C<ignore_source_control>
+
+If true, CPAN::Mini will not try to remove source control files during
+cleanup. See C<clean_unmirrored> for details.
 
 =item *
 
@@ -692,7 +717,16 @@ all files are allowed.
 
 This method looks through the local mirror's files.  If it finds a file that
 neither belongs in the mirror nor is allowed (see the C<file_allowed> method),
-C<clean_file> is called on the file.
+C<clean_file> is called on the file. 
+
+If you set C<ignore_source_control> to a true value, then this doesn't clean
+up files that belong to source control systems. Currently this ignores:
+
+	.cvs .cvsignore
+	.svn .svnignore
+	.git .gitignore
+
+Send patches for other source control files that you would like to have added.
 
 =head2 clean_file
 

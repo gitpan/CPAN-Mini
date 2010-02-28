@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 package CPAN::Mini::App;
-our $VERSION = '1.100590';
+our $VERSION = '1.100591';
 
 # ABSTRACT: the guts of the minicpan command
 
@@ -71,6 +71,7 @@ sub run {
     path_filters   => $config{path_filters},
     skip_cleanup   => $config{skip_cleanup},
     skip_perl      => (not $config{perl}),
+    ignore_source_control => $config{ignore_source_control}
     (defined $config{dirmode} ? (dirmode => $config{dirmode}) : ()),
     (defined $config{errors}  ? (errors  => $config{errors})  : ()),
   );
@@ -88,7 +89,7 @@ CPAN::Mini::App - the guts of the minicpan command
 
 =head1 VERSION
 
-version 1.100590
+version 1.100591
 
 =head1 SYNOPSIS
 

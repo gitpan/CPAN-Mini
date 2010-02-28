@@ -7,7 +7,7 @@
       "version" : 1.4,
       "url" : "http://module-build.sourceforge.net/META-spec-v1.4.html"
    },
-   "version" : "1.100590",
+   "version" : "1.100591",
    "name" : "CPAN-Mini",
    "author" : [
       "Ricardo SIGNES <rjbs@cpan.org>",
@@ -16,7 +16,7 @@
    "license" : "perl",
    "requires" : {
       "Getopt::Long" : "0",
-      "File::Copy" : "0",
+      "File::Copy" : 0,
       "URI" : "1",
       "Compress::Zlib" : "1.20",
       "File::HomeDir" : "0.57",
@@ -24,12 +24,12 @@
       "File::Spec" : "0",
       "ExtUtils::MakeMaker" : "6.11",
       "CPAN::DistnameInfo" : 0,
-      "Carp" : "0",
+      "Carp" : 0,
       "perl" : "5.006",
       "Test::More" : "0",
       "LWP::UserAgent" : "5",
       "File::Find" : "0",
-      "File::Temp" : "0",
+      "File::Temp" : 0,
       "File::Path" : "2.04",
       "File::Basename" : "0"
    },

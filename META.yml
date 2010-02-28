@@ -29,4 +29,4 @@ requires:
   perl: 5.006
 resources:
   repository: git://git.codesimply.com/CPAN-Mini.git
-version: 1.100590
+version: 1.100591
