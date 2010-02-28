@@ -19,7 +19,7 @@ my %WriteMakefileArgs = (
                        'EXE_FILES' => [
                                         'bin/minicpan'
                                       ],
-                       'VERSION' => '1.100591',
+                       'VERSION' => '1.100592',
                        'LICENSE' => 'perl',
                        'PREREQ_PM' => {
                                         'File::Copy' => 0,
