@@ -3,7 +3,7 @@ abstract: 'create a minimal mirror of CPAN'
 author:
   - 'Ricardo SIGNES <rjbs@cpan.org>'
   - 'Randal Schwartz <merlyn@stonehenge.com>'
-generated_by: 'Dist::Zilla version 1.100160'
+generated_by: 'Dist::Zilla version 1.100520'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -29,4 +29,4 @@ requires:
   perl: 5.006
 resources:
   repository: git://git.codesimply.com/CPAN-Mini.git
-version: 1.100470_001
+version: 1.100590

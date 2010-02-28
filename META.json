@@ -2,12 +2,12 @@
    "resources" : {
       "repository" : "git://git.codesimply.com/CPAN-Mini.git"
    },
-   "generated_by" : "Dist::Zilla version 1.100160",
+   "generated_by" : "Dist::Zilla version 1.100520",
    "meta-spec" : {
       "version" : 1.4,
       "url" : "http://module-build.sourceforge.net/META-spec-v1.4.html"
    },
-   "version" : "1.100470_001",
+   "version" : "1.100590",
    "name" : "CPAN-Mini",
    "author" : [
       "Ricardo SIGNES <rjbs@cpan.org>",

@@ -1,14 +1,16 @@
 use strict;
 use warnings;
+
 package CPAN::Mini::App;
-our $VERSION = '1.100470_001';
+our $VERSION = '1.100590';
+
 # ABSTRACT: the guts of the minicpan command
 
 
 use CPAN::Mini;
 use File::HomeDir;
 use File::Spec;
-use Getopt::Long qw(GetOptions);
+use Getopt::Long qw(:config no_ignore_case);
 use Pod::Usage 1.00;
 
 sub _display_version {
@@ -22,24 +24,31 @@ sub _display_version {
 
 
 sub run {
-  my %config = CPAN::Mini->read_config;
-  $config{class} ||= 'CPAN::Mini';
   my $version;
 
+  my %commandline;
   GetOptions(
-    "c|class=s"   => \$config{class},
+    "c|class=s"   => \$commandline{class},
+    "C|config=s"  => \$commandline{config_file},
     "h|help"      => sub { pod2usage(1); },
     "v|version"   => sub { $version = 1 },
-    "l|local=s"   => \$config{local},
-    "r|remote=s"  => \$config{remote},
-    "d|dirmode=s" => \$config{dirmode},
-    "qq"          => sub { $config{quiet} = 2; $config{errors} = 0; },
-    'offline'     => \$config{offline},
-    "q+" => \$config{quiet},
-    "f+" => \$config{force},
-    "p+" => \$config{perl},
-    "x+" => \$config{exact_mirror},
+    "l|local=s"   => \$commandline{local},
+    "r|remote=s"  => \$commandline{remote},
+    "d|dirmode=s" => \$commandline{dirmode},
+    "qq"          => sub { $commandline{quiet} = 2; $commandline{errors} = 0; },
+    'offline'     => \$commandline{offline},
+    "q+"          => \$commandline{quiet},
+    "f+"          => \$commandline{force},
+    "p+"          => \$commandline{perl},
+    "x+"          => \$commandline{exact_mirror},
   ) or pod2usage(2);
+
+  my %config = CPAN::Mini->read_config(\%commandline);
+  $config{class} ||= 'CPAN::Mini';
+
+  foreach my $key (keys %commandline) {
+    $config{$key} = $commandline{$key} if defined $commandline{$key};
+  }
 
   eval "require $config{class}";
   die $@ if $@;
@@ -51,11 +60,11 @@ sub run {
   $config{dirmode} &&= oct($config{dirmode});
 
   $config{class}->update_mirror(
-    remote  => $config{remote},
-    local   => $config{local},
-    trace   => (not $config{quiet}),
-    force   => $config{force},
-    offline => $config{offline},
+    remote         => $config{remote},
+    local          => $config{local},
+    trace          => (not $config{quiet}),
+    force          => $config{force},
+    offline        => $config{offline},
     also_mirror    => $config{also_mirror},
     exact_mirror   => $config{exact_mirror},
     module_filters => $config{module_filters},
@@ -79,7 +88,7 @@ CPAN::Mini::App - the guts of the minicpan command
 
 =head1 VERSION
 
-version 1.100470_001
+version 1.100590
 
 =head1 SYNOPSIS
 

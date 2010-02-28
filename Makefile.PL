@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-
+ BEGIN { require 5.006; } 
 
 use ExtUtils::MakeMaker 6.11;
 
@@ -19,7 +19,7 @@ my %WriteMakefileArgs = (
                        'EXE_FILES' => [
                                         'bin/minicpan'
                                       ],
-                       'VERSION' => '1.100470_001',
+                       'VERSION' => '1.100590',
                        'LICENSE' => 'perl',
                        'PREREQ_PM' => {
                                         'File::Copy' => 0,

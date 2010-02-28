@@ -11,6 +11,7 @@ dist.ini
 lib/CPAN/Mini.pm
 lib/CPAN/Mini/App.pm
 t/00-load.t
+t/config_file.t
 t/filter.t
 t/release-pod-coverage.t
 t/release-pod-syntax.t
