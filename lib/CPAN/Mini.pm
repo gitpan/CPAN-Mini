@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 package CPAN::Mini;
-our $VERSION = '1.100592';
+our $VERSION = '1.100593';
 
 # ABSTRACT: create a minimal mirror of CPAN
 
@@ -356,7 +356,7 @@ sub clean_unmirrored {
 
   File::Find::find sub {
     my $file = File::Spec->canonpath($File::Find::name);  ## no critic Package
-    my $basename = basename( $file );
+    my $basename = File::Basename::basename( $file );
 
     if (
       $self->{ignore_source_control}
@@ -513,7 +513,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 1.100592
+version 1.100593
 
 =head1 SYNOPSIS
 

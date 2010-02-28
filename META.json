@@ -7,7 +7,7 @@
       "version" : 1.4,
       "url" : "http://module-build.sourceforge.net/META-spec-v1.4.html"
    },
-   "version" : "1.100592",
+   "version" : "1.100593",
    "name" : "CPAN-Mini",
    "author" : [
       "Ricardo SIGNES <rjbs@cpan.org>",
