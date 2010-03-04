@@ -14,13 +14,16 @@ my %WriteMakefileArgs = (
                                  },
                        'NAME' => 'CPAN::Mini',
                        'DISTNAME' => 'CPAN-Mini',
+                       'CONFIGURE_REQUIRES' => {
+                                                 'ExtUtils::MakeMaker' => '6.11'
+                                               },
                        'AUTHOR' => 'Ricardo SIGNES <rjbs@cpan.org>, Randal Schwartz <merlyn@stonehenge.com>',
+                       'BUILD_REQUIRES' => {},
                        'ABSTRACT' => 'create a minimal mirror of CPAN',
                        'EXE_FILES' => [
                                         'bin/minicpan'
                                       ],
-                       'VERSION' => '1.100593',
-                       'LICENSE' => 'perl',
+                       'VERSION' => '1.100630',
                        'PREREQ_PM' => {
                                         'File::Copy' => 0,
                                         'Getopt::Long' => 0,
@@ -28,7 +31,6 @@ my %WriteMakefileArgs = (
                                         'URI' => '1',
                                         'Pod::Usage' => '1.00',
                                         'File::HomeDir' => '0.57',
-                                        'ExtUtils::MakeMaker' => '6.11',
                                         'File::Spec' => 0,
                                         'Carp' => 0,
                                         'Test::More' => 0,
@@ -37,7 +39,8 @@ my %WriteMakefileArgs = (
                                         'File::Temp' => 0,
                                         'File::Path' => '2.04',
                                         'File::Basename' => 0
-                                      }
+                                      },
+                       'LICENSE' => 'perl'
                      );
 
 

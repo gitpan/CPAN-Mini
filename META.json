@@ -2,37 +2,39 @@
    "resources" : {
       "repository" : "git://git.codesimply.com/CPAN-Mini.git"
    },
-   "generated_by" : "Dist::Zilla version 1.100520",
    "meta-spec" : {
       "version" : 1.4,
       "url" : "http://module-build.sourceforge.net/META-spec-v1.4.html"
    },
-   "version" : "1.100593",
+   "generated_by" : "Dist::Zilla version 1.100630",
+   "version" : "1.100630",
    "name" : "CPAN-Mini",
    "author" : [
       "Ricardo SIGNES <rjbs@cpan.org>",
       "Randal Schwartz <merlyn@stonehenge.com>"
    ],
    "license" : "perl",
+   "build_requires" : {},
    "requires" : {
-      "Getopt::Long" : "0",
-      "File::Copy" : "0",
-      "URI" : "1",
+      "File::Copy" : 0,
+      "Getopt::Long" : 0,
       "Compress::Zlib" : "1.20",
-      "File::HomeDir" : "0.57",
+      "URI" : "1",
       "Pod::Usage" : "1.00",
-      "File::Spec" : "0",
-      "ExtUtils::MakeMaker" : "6.11",
-      "CPAN::DistnameInfo" : 0,
-      "Carp" : "0",
+      "File::HomeDir" : "0.57",
+      "File::Spec" : 0,
+      "Carp" : 0,
+      "Test::More" : 0,
       "perl" : "5.006",
-      "Test::More" : "0",
       "LWP::UserAgent" : "5",
-      "File::Find" : "0",
-      "File::Temp" : "0",
+      "File::Find" : 0,
+      "File::Temp" : 0,
       "File::Path" : "2.04",
-      "File::Basename" : "0"
+      "File::Basename" : 0
    },
-   "abstract" : "create a minimal mirror of CPAN"
+   "abstract" : "create a minimal mirror of CPAN",
+   "configure_requires" : {
+      "ExtUtils::MakeMaker" : "6.11"
+   }
 }
 

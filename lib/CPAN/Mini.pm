@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 package CPAN::Mini;
-our $VERSION = '1.100593';
+our $VERSION = '1.100630';
 
 # ABSTRACT: create a minimal mirror of CPAN
 
@@ -425,7 +425,11 @@ sub read_config {
   my ($class, $options) = @_;
 
   my $config_file = $class->config_file($options);
-  $class->trace("Using config from $config_file\n");
+
+  # This is ugly, but lets us respect -qq for now even before we have an
+  # object.  I think a better fix is warranted. -- rjbs, 2010-03-04
+  $class->trace("Using config from $config_file\n")
+    unless $options->{quiet};
 
   open my $config_fh, '<', $config_file
     or die "couldn't open config file $config_file: $!";
@@ -513,7 +517,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 1.100593
+version 1.100630
 
 =head1 SYNOPSIS
 
