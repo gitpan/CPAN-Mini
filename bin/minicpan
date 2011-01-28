@@ -4,11 +4,20 @@ use warnings;
 use CPAN::Mini::App;
 CPAN::Mini::App->run;
 
-__END__
+# PODNAME: minicpan
+# ABSTRACT: uses CPAN::Mini to create or update a local mirror
+
+
+
+=pod
 
 =head1 NAME
 
 minicpan - uses CPAN::Mini to create or update a local mirror
+
+=head1 VERSION
+
+version 1.110
 
 =head1 SYNOPSIS
 
@@ -43,7 +52,7 @@ example:
  local:  /home/rjbs/mirrors/minicpan/
  remote: http://your.favorite.cpan/cpan/
  exact_mirror: 1
- 
+
 C<minicpan> tries to find a configuration file through the following process.
 It takes the first defined it finds:
 
@@ -77,13 +86,27 @@ Randal Schwartz's original article, which can be found here:
 
 =head1 AUTHORS
 
-Randal Schwartz <F<merlyn@stonehenge.com>> had the bright idea and wrote the
-original implementation.
+=over 4
 
-Ricardo SIGNES <F<rjbs@cpan.org>> brazenly took the script, made a module and
-distribution, and slowly allowed it to gain features.
+=item *
 
-This code was copyrighted in 2004, and is released under the same terms as Perl
-itself.
+Ricardo SIGNES <rjbs@cpan.org>
+
+=item *
+
+Randal Schwartz <merlyn@stonehenge.com>
+
+=back
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2004 by Ricardo SIGNES.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+

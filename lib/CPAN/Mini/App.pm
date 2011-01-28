@@ -2,7 +2,9 @@ use strict;
 use warnings;
 
 package CPAN::Mini::App;
-our $VERSION = '1.100630';
+BEGIN {
+  $CPAN::Mini::App::VERSION = '1.110';
+}
 
 # ABSTRACT: the guts of the minicpan command
 
@@ -89,7 +91,7 @@ CPAN::Mini::App - the guts of the minicpan command
 
 =head1 VERSION
 
-version 1.100630
+version 1.110
 
 =head1 SYNOPSIS
 
@@ -112,12 +114,21 @@ Randal Schwartz's original article, which can be found here:
 
 =head1 AUTHORS
 
-  Ricardo SIGNES <rjbs@cpan.org>
-  Randal Schwartz <merlyn@stonehenge.com>
+=over 4
+
+=item *
+
+Ricardo SIGNES <rjbs@cpan.org>
+
+=item *
+
+Randal Schwartz <merlyn@stonehenge.com>
+
+=back
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2010 by Ricardo SIGNES.
+This software is copyright (c) 2004 by Ricardo SIGNES.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

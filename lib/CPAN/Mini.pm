@@ -3,7 +3,9 @@ use strict;
 use warnings;
 
 package CPAN::Mini;
-our $VERSION = '1.100630';
+BEGIN {
+  $CPAN::Mini::VERSION = '1.110';
+}
 
 # ABSTRACT: create a minimal mirror of CPAN
 
@@ -426,10 +428,14 @@ sub read_config {
 
   my $config_file = $class->config_file($options);
 
+  return unless defined $config_file;
+
   # This is ugly, but lets us respect -qq for now even before we have an
   # object.  I think a better fix is warranted. -- rjbs, 2010-03-04
   $class->trace("Using config from $config_file\n")
     unless $options->{quiet};
+
+  return unless -e $config_file;
 
   open my $config_fh, '<', $config_file
     or die "couldn't open config file $config_file: $!";
@@ -517,7 +523,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 1.100630
+version 1.110
 
 =head1 SYNOPSIS
 
@@ -615,7 +621,7 @@ on this run.
 C<skip_perl>
 
 If true, CPAN::Mini will skip the major language distributions: perl, parrot,
-and ponie.
+and ponie.  It will also skip embperl, sybperl, bioperl, and kurila.
 
 =item *
 
@@ -813,12 +819,21 @@ Thanks to David Golden for some important bugfixes and refactoring.
 
 =head1 AUTHORS
 
-  Ricardo SIGNES <rjbs@cpan.org>
-  Randal Schwartz <merlyn@stonehenge.com>
+=over 4
+
+=item *
+
+Ricardo SIGNES <rjbs@cpan.org>
+
+=item *
+
+Randal Schwartz <merlyn@stonehenge.com>
+
+=back
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2010 by Ricardo SIGNES.
+This software is copyright (c) 2004 by Ricardo SIGNES.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
