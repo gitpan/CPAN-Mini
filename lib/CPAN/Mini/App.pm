@@ -3,7 +3,7 @@ use warnings;
 
 package CPAN::Mini::App;
 BEGIN {
-  $CPAN::Mini::App::VERSION = '1.110';
+  $CPAN::Mini::App::VERSION = '1.111';
 }
 
 # ABSTRACT: the guts of the minicpan command
@@ -43,6 +43,7 @@ sub run {
     "f+"          => \$commandline{force},
     "p+"          => \$commandline{perl},
     "x+"          => \$commandline{exact_mirror},
+    "t|timeout=i" => \$commandline{timeout},
   ) or pod2usage(2);
 
   my %config = CPAN::Mini->read_config(\%commandline);
@@ -73,6 +74,7 @@ sub run {
     path_filters   => $config{path_filters},
     skip_cleanup   => $config{skip_cleanup},
     skip_perl      => (not $config{perl}),
+    timeout        => $config{timeout},
     ignore_source_control => $config{ignore_source_control},
     (defined $config{dirmode} ? (dirmode => $config{dirmode}) : ()),
     (defined $config{errors}  ? (errors  => $config{errors})  : ()),
@@ -91,7 +93,7 @@ CPAN::Mini::App - the guts of the minicpan command
 
 =head1 VERSION
 
-version 1.110
+version 1.111
 
 =head1 SYNOPSIS
 

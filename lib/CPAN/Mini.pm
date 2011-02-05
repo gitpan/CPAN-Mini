@@ -4,7 +4,7 @@ use warnings;
 
 package CPAN::Mini;
 BEGIN {
-  $CPAN::Mini::VERSION = '1.110';
+  $CPAN::Mini::VERSION = '1.111';
 }
 
 # ABSTRACT: create a minimal mirror of CPAN
@@ -158,6 +158,7 @@ sub new {
     agent     => "$class/$version",
     env_proxy => 1,
     ($self->{no_conn_cache} ? () : (keep_alive => 5)),
+    ($self->{timeout} ? (timeout => $self->{timeout}) : ()),
   );
 
   unless ($self->{offline}) {
@@ -523,7 +524,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 1.110
+version 1.111
 
 =head1 SYNOPSIS
 
