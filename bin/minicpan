@@ -17,7 +17,7 @@ minicpan - uses CPAN::Mini to create or update a local mirror
 
 =head1 VERSION
 
-version 1.111
+version 1.111001
 
 =head1 SYNOPSIS
 
