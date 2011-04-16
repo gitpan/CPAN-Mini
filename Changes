@@ -1,5 +1,9 @@
 Revision history for CPAN-Mini
 
+1.111002  2011-04-16 18:20:43 Europe/Amsterdam
+
+          test for online-ness by HEAD-ing 02packages, not the remote root
+
 1.111001  2011-02-10 19:34:38 America/New_York
           restore six-digit-mantissa versioning to help downstream packagers
 
@@ -80,7 +84,7 @@ Revision history for CPAN-Mini
 0.564     2007-10-31
           tweak packaging for CPANTS
 
-0.563     2007-??-??
+0.563     2007-10-16
           MAJOR BUG FIX: mirror files in ./modules
             introduced in 0.561, this bug only affected new mirrors, so anyone
             who had been using it before that would not have noticed
