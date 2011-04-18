@@ -51,7 +51,7 @@
          "url" : "git://git.codesimply.com/CPAN-Mini.git"
       }
    },
-   "version" : "1.111002",
+   "version" : "1.111003",
    "x_Dist_Zilla" : {
       "plugins" : [
          {

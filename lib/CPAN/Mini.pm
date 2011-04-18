@@ -4,7 +4,7 @@ use warnings;
 
 package CPAN::Mini;
 BEGIN {
-  $CPAN::Mini::VERSION = '1.111002';
+  $CPAN::Mini::VERSION = '1.111003';
 }
 
 # ABSTRACT: create a minimal mirror of CPAN
@@ -529,20 +529,20 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 1.111002
+version 1.111003
 
 =head1 SYNOPSIS
 
 (If you're not going to do something weird, you probably want to look at the
 L<minicpan> command, instead.)
 
- use CPAN::Mini;
+  use CPAN::Mini;
 
- CPAN::Mini->update_mirror(
-   remote => "http://cpan.mirrors.comintern.su",
-   local  => "/usr/share/mirrors/cpan",
-   trace  => 1
- );
+  CPAN::Mini->update_mirror(
+    remote => "http://cpan.mirrors.comintern.su",
+    local  => "/usr/share/mirrors/cpan",
+    trace  => 1
+  );
 
 =head1 DESCRIPTION
 
