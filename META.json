@@ -44,14 +44,14 @@
          }
       }
    },
-   "release_status" : "stable",
+   "release_status" : "testing",
    "resources" : {
       "repository" : {
          "type" : "git",
          "url" : "git://git.codesimply.com/CPAN-Mini.git"
       }
    },
-   "version" : "1.111003",
+   "version" : "1.111004",
    "x_Dist_Zilla" : {
       "plugins" : [
          {
@@ -167,7 +167,7 @@
          {
             "class" : "Dist::Zilla::Plugin::Repository",
             "name" : "@RJBS/Repository",
-            "version" : "0.17"
+            "version" : "0.18"
          },
          {
             "class" : "Dist::Zilla::Plugin::Prereqs",
@@ -229,7 +229,7 @@
       "zilla" : {
          "class" : "Dist::Zilla::Dist::Builder",
          "config" : {
-            "is_trial" : 0
+            "is_trial" : 1
          },
          "version" : "4.200005"
       }

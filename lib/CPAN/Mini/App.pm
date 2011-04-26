@@ -3,7 +3,7 @@ use warnings;
 
 package CPAN::Mini::App;
 BEGIN {
-  $CPAN::Mini::App::VERSION = '1.111003';
+  $CPAN::Mini::App::VERSION = '1.111004'; # TRIAL
 }
 
 # ABSTRACT: the guts of the minicpan command
@@ -25,33 +25,82 @@ sub _display_version {
 }
 
 
+sub _validate_log_level {
+  my ($class, $level) = @_;
+  return $level if $level =~ /\A(?:fatal|warn|debug|info)\z/;
+  die "unknown logging level: $level\n";
+}
+
 sub run {
+  my ($class) = @_;
+
+  my $minicpan = $class->initialize_minicpan;
+
+  $minicpan->update_mirror;
+}
+
+sub initialize_minicpan {
+  my ($class) = @_;
+
   my $version;
 
   my %commandline;
+
+  my ($quiet, $debug, $log_level);
+
   GetOptions(
-    "c|class=s"   => \$commandline{class},
-    "C|config=s"  => \$commandline{config_file},
-    "h|help"      => sub { pod2usage(1); },
-    "v|version"   => sub { $version = 1 },
-    "l|local=s"   => \$commandline{local},
-    "r|remote=s"  => \$commandline{remote},
-    "d|dirmode=s" => \$commandline{dirmode},
-    "qq"          => sub { $commandline{quiet} = 2; $commandline{errors} = 0; },
+    'c|class=s'   => \$commandline{class},
+
+    # These two options will cause the program to exit before finishing ->run
+    'h|help'      => sub { pod2usage(1); },
+    'v|version'   => sub { $version = 1 },
+
+    # How noisy should we be?
+    'quiet|q+'    => \$quiet,
+    'qq'          => sub { $quiet = 2 },
+    'debug'       => \$debug,
+    'log-level=s' => \$log_level,
+
+    'l|local=s'   => \$commandline{local},
+    'r|remote=s'  => \$commandline{remote},
+
+    'd|dirmode=s' => \$commandline{dirmode},
     'offline'     => \$commandline{offline},
-    "q+"          => \$commandline{quiet},
-    "f+"          => \$commandline{force},
-    "p+"          => \$commandline{perl},
-    "x+"          => \$commandline{exact_mirror},
-    "t|timeout=i" => \$commandline{timeout},
+    'f'           => \$commandline{force},
+    'p'           => \$commandline{perl},
+    'x'           => \$commandline{exact_mirror},
+    't|timeout=i' => \$commandline{timeout},
+
+    # Where to look for config not provided on the command line:
+    'C|config=s'  => \$commandline{config_file},
   ) or pod2usage(2);
 
-  my %config = CPAN::Mini->read_config(\%commandline);
+  die "can't mix --debug, --log-level, and --debug\n"
+    if defined($quiet) + defined($debug) + defined($log_level) > 1;
+
+  $quiet ||= 0;
+  $log_level = $debug      ? 'debug'
+             : $quiet == 1 ? 'warn'
+             : $quiet >= 2 ? 'fatal'
+             : $log_level  ? $log_level
+             :               undef;
+
+  $class->_validate_log_level($log_level) if defined $log_level;
+
+  my %config = CPAN::Mini->read_config({
+    log_level => 'info',
+    %commandline
+  });
+
   $config{class} ||= 'CPAN::Mini';
 
   foreach my $key (keys %commandline) {
     $config{$key} = $commandline{$key} if defined $commandline{$key};
   }
+
+  $config{log_level} = $log_level || $config{log_level} || 'info';
+
+  $class->_validate_log_level($config{log_level});
 
   eval "require $config{class}";
   die $@ if $@;
@@ -62,10 +111,9 @@ sub run {
   $|++;
   $config{dirmode} &&= oct($config{dirmode});
 
-  $config{class}->update_mirror(
+  return $config{class}->new(
     remote         => $config{remote},
     local          => $config{local},
-    trace          => (not $config{quiet}),
     force          => $config{force},
     offline        => $config{offline},
     also_mirror    => $config{also_mirror},
@@ -77,7 +125,8 @@ sub run {
     timeout        => $config{timeout},
     ignore_source_control => $config{ignore_source_control},
     (defined $config{dirmode} ? (dirmode => $config{dirmode}) : ()),
-    (defined $config{errors}  ? (errors  => $config{errors})  : ()),
+
+    log_level      => $config{log_level},
   );
 }
 
@@ -93,7 +142,7 @@ CPAN::Mini::App - the guts of the minicpan command
 
 =head1 VERSION
 
-version 1.111003
+version 1.111004
 
 =head1 SYNOPSIS
 

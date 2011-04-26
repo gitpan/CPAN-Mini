@@ -4,7 +4,7 @@ use warnings;
 
 package CPAN::Mini;
 BEGIN {
-  $CPAN::Mini::VERSION = '1.111003';
+  $CPAN::Mini::VERSION = '1.111004'; # TRIAL
 }
 
 # ABSTRACT: create a minimal mirror of CPAN
@@ -33,9 +33,9 @@ sub update_mirror {
   $self = $self->new(@_) unless ref $self;
 
   unless ($self->{offline}) {
-    $self->trace("Updating $self->{local}\n");
-    $self->trace("Mirroring from $self->{remote}\n");
-    $self->trace("=" x 63 . "\n");
+    $self->log("Updating $self->{local}");
+    $self->log("Mirroring from $self->{remote}");
+    $self->log("=" x 63);
 
     # mirrored tracks the already done, keyed by filename
     # 1 = local-checked, 2 = remote-mirrored
@@ -70,7 +70,7 @@ sub _write_out_recent {
   open my $recent_fh, '>', $recent or die "can't open $recent for writing: $!";
 
   for my $file (sort keys %{ $self->{recent} }) {
-    print $recent_fh "$file\n" or die "can't write to $recent: $!";
+    print {$recent_fh} "$file\n" or die "can't write to $recent: $!";
   }
 
   die "error closing $recent: $!" unless close $recent_fh;
@@ -83,8 +83,10 @@ sub _get_mirror_list {
   my %mirror_list;
 
   # now walk the packages list
-  my $details = File::Spec->catfile($self->{scratch},
-    qw(modules 02packages.details.txt.gz));
+  my $details = File::Spec->catfile(
+    $self->_scratch_dir,
+    qw(modules 02packages.details.txt.gz)
+  );
 
   my $gz = Compress::Zlib::gzopen($details, "rb")
     or die "Cannot open details: $Compress::Zlib::gzerrno";
@@ -124,7 +126,6 @@ sub new {
   $self->{dirmode} = $defaults{dirmode} unless defined $self->{dirmode};
 
   $self->{recent} = {};
-  $self->{scratch} ||= File::Temp::tempdir(CLEANUP => 1);
 
   Carp::croak "no local mirror supplied" unless $self->{local};
 
@@ -139,7 +140,7 @@ sub new {
     File::Path::mkpath(
       $self->{local},
       {
-        verbose => $self->{trace},
+        verbose => $self->{log_level} eq 'debug',
         mode    => $self->{dirmode},
       },
     );
@@ -171,6 +172,8 @@ sub new {
       unless eval { $self->__lwp->head($test_uri)->is_success };
   }
 
+  $self->{log_level} ||= 'info';
+
   return $self;
 }
 
@@ -185,14 +188,24 @@ sub _fixed_mirrors {
   );
 }
 
+sub _scratch_dir {
+  my ($self) = @_;
+
+  $self->{scratch} ||= File::Temp::tempdir(CLEANUP => 1);
+  return $self->{scratch};
+}
+
 sub mirror_indices {
   my $self = shift;
 
-  $self->_make_index_dirs($self->{scratch});
+  $self->_make_index_dirs($self->_scratch_dir);
 
   for my $path ($self->_fixed_mirrors) {
     my $local_file   = File::Spec->catfile($self->{local},   split m{/}, $path);
-    my $scratch_file = File::Spec->catfile($self->{scratch}, split m{/}, $path);
+    my $scratch_file = File::Spec->catfile(
+      $self->_scratch_dir,
+      split(m{/}, $path),
+    );
 
     File::Copy::copy($local_file, $scratch_file);
 
@@ -212,7 +225,7 @@ sub _mirror_extras {
 
 sub _make_index_dirs {
   my ($self, $base_dir, $dir_mode, $trace) = @_;
-  $base_dir ||= $self->{scratch};
+  $base_dir ||= $self->_scratch_dir;
   $dir_mode = 0711 if !defined $dir_mode;  ## no critic Zero
   $trace    = 0    if !defined $trace;
 
@@ -227,15 +240,21 @@ sub _make_index_dirs {
 sub _install_indices {
   my $self = shift;
 
-  $self->_make_index_dirs($self->{local}, $self->{dirmode}, $self->{trace});
+  $self->_make_index_dirs(
+    $self->{local},
+    $self->{dirmode},
+    $self->{log_level} eq 'debug',
+  );
 
   for my $file ($self->_fixed_mirrors) {
     my $local_file = File::Spec->catfile($self->{local}, split m{/}, $file);
 
     unlink $local_file;
 
-    File::Copy::copy(File::Spec->catfile($self->{scratch}, split m{/}, $file),
-      $local_file,);
+    File::Copy::copy(
+      File::Spec->catfile($self->_scratch_dir, split m{/}, $file),
+      $local_file,
+    );
 
     $self->{mirrored}{$local_file} = 1;
   }
@@ -254,7 +273,7 @@ sub mirror_file {
 
   # native absolute file
   my $local_file = File::Spec->catfile(
-    $arg->{to_scratch} ? $self->{scratch} : $self->{local},
+    $arg->{to_scratch} ? $self->_scratch_dir : $self->{local},
     split m{/}, $path
   );
 
@@ -270,29 +289,26 @@ sub mirror_file {
     File::Path::mkpath(
       File::Basename::dirname($local_file),
       {
-        verbose => $self->{trace},
+        verbose => $self->{log_level} eq 'debug',
         mode    => $self->{dirmode},
       },
     );
 
-    $self->trace($path);
+    $self->log($path, { no_nl => 1 });
     my $res = $self->{__lwp}->mirror($remote_uri, $local_file);
 
     if ($res->is_success) {
       utime undef, undef, $local_file if $arg->{update_times};
       $checksum_might_be_up_to_date = 0;
       $self->_recent($path);
-      $self->trace(" ... updated\n");
+      $self->log(" ... updated");
       $self->{changes_made}++;
     } elsif ($res->code != 304) {  # not modified
-      warn(
-        ($self->{trace} ? "\n" : q{})
-        . "$remote_uri: "
-        . $res->status_line . "\n"
-      ) if $self->{errors};
+      $self->log(" ... resulted in an HTTP error with status " . $res->code);
+      $self->log_warn("$remote_uri: " . $res->status_line);
       return;
     } else {
-      $self->trace(" ... up to date\n");
+      $self->log(" ... up to date");
     }
   }
 
@@ -376,13 +392,8 @@ sub clean_unmirrored {
 
     return unless (-f $file and not $self->{mirrored}{$file});
     return if $self->file_allowed($file);
-    $self->trace("cleaning $file ...");
 
-    if ($self->clean_file($file)) {
-      $self->trace("done\n");
-    } else {
-      $self->trace("couldn't be cleaned\n");
-    }
+    $self->clean_file($file);
 
   }, $self->{local};
 }
@@ -392,17 +403,44 @@ sub clean_file {
   my ($self, $file) = @_;
 
   unless (unlink $file) {
-    warn "$file ... cannot be removed: $!\n" if $self->{errors};
+    $self->log_warn("$file cannot be removed: $!");
     return;
   }
+
+  $self->log("$file removed");
 
   return 1;
 }
 
 
-sub trace {
-  my ($self, $message) = @_;
-  print { $self->_trace_fh } $message;
+sub log_level {
+  return $_[0]->{log_level} if ref $_[0];
+  return 'info';
+}
+
+sub log_unconditionally {
+  my ($self, $message, $arg) = @_;
+  $arg ||= {};
+
+  print($message, $arg->{no_nl} ? () : "\n");
+}
+
+sub log_warn {
+  return if $_[0]->log_level eq 'fatal';
+  $_[0]->log_unconditionally($_[1], $_[2]);
+}
+
+sub log {
+  return unless $_[0]->log_level =~ /\A(?:info|debug)\z/;
+  $_[0]->log_unconditionally($_[1], $_[2]);
+}
+
+sub trace { my $self = shift; $self->log_info(@_); }
+
+sub log_debug {
+  my ($self, @rest) = @_;
+  return unless $_[0]->log_level eq 'debug';
+  $_[0]->log_unconditionally($_[1], $_[2]);
 }
 
 
@@ -438,8 +476,8 @@ sub read_config {
 
   # This is ugly, but lets us respect -qq for now even before we have an
   # object.  I think a better fix is warranted. -- rjbs, 2010-03-04
-  $class->trace("Using config from $config_file\n")
-    unless $options->{quiet};
+  $class->log("Using config from $config_file")
+    if ($options->{log_level}||'info') =~ /\A(?:warn|fatal)\z/;
 
   return unless -e $config_file;
 
@@ -489,34 +527,6 @@ sub config_file {
   );
 }
 
-sub __default_fh { *STDOUT{IO} }
-
-# stolen from IO::Interactive
-local (*DEV_NULL, *DEV_NULL2);
-my $dev_null;
-
-BEGIN {
-  pipe *DEV_NULL, *DEV_NULL2
-    or die "Internal error: can't create null filehandle";
-  $dev_null = \*DEV_NULL;
-}
-
-sub __quiet_fh { $dev_null }
-
-sub _trace_fh {
-  my ($either) = @_;
-
-  return do {
-    if (ref $either and defined $either->{trace} and !$either->{trace}) {
-      $either->__quiet_fh;
-    } elsif (eval { $either->can('_default_fh'); }) {
-      $either->__default_fh;
-    } else {
-      __default_fh();
-    }
-  };
-}
-
 
 1;
 
@@ -529,7 +539,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 1.111003
+version 1.111004
 
 =head1 SYNOPSIS
 
@@ -541,7 +551,7 @@ L<minicpan> command, instead.)
   CPAN::Mini->update_mirror(
     remote => "http://cpan.mirrors.comintern.su",
     local  => "/usr/share/mirrors/cpan",
-    trace  => 1
+    log_level => 'debug',
   );
 
 =head1 DESCRIPTION
@@ -574,12 +584,12 @@ the last non-developer release of every dist for every author
 
 =head2 update_mirror
 
- CPAN::Mini->update_mirror(
-   remote => "http://cpan.mirrors.comintern.su",
-   local  => "/usr/share/mirrors/cpan",
-   force  => 0,
-   trace  => 1
- );
+  CPAN::Mini->update_mirror(
+    remote => "http://cpan.mirrors.comintern.su",
+    local  => "/usr/share/mirrors/cpan",
+    force  => 0,
+    log_level => 'debug',
+  );
 
 This is the only method that need be called from outside this module.  It will
 update the local mirror with the files from the remote mirror.   
@@ -631,9 +641,9 @@ and ponie.  It will also skip embperl, sybperl, bioperl, and kurila.
 
 =item *
 
-C<trace>
+C<log_level>
 
-If true, CPAN::Mini will print status messages to STDOUT as it works.
+This defines the minimum level of message to log: debug, info, warn, or fatal
 
 =item *
 
@@ -751,16 +761,22 @@ Send patches for other source control files that you would like to have added.
 This method, called by C<clean_unmirrored>, deletes the named file.  It returns
 true if the file is successfully unlinked.  Otherwise, it returns false.
 
-=head2 trace
+=head2 log_warn
 
-  $minicpan->trace($message);
+=head2 log
 
-If the object is mirroring verbosely, this method will print messages sent to
-it.
+=head2 log_debug
+
+  $minicpan->log($message);
+
+This will log (print) the given message unless the log level is too loo.
+
+C<log>, which logs at the I<info> level, may also be called as C<trace> for
+backward compatibility reasons.
 
 =head2 read_config
 
-  my %config = CPAN::Mini->read_config;
+  my %config = CPAN::Mini->read_config(\%options);
 
 This routine returns a set of arguments that can be passed to CPAN::Mini's
 C<new> or C<update_mirror> methods.  It will look for a file called
