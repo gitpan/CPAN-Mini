@@ -4,7 +4,7 @@ use warnings;
 
 BEGIN { require 5.006; }
 
-use ExtUtils::MakeMaker 6.31;
+use ExtUtils::MakeMaker 6.30;
 
 
 
@@ -15,7 +15,7 @@ my %WriteMakefileArgs = (
     'Test::More' => '0.96'
   },
   'CONFIGURE_REQUIRES' => {
-    'ExtUtils::MakeMaker' => '6.31'
+    'ExtUtils::MakeMaker' => '6.30'
   },
   'DISTNAME' => 'CPAN-Mini',
   'EXE_FILES' => [
@@ -38,7 +38,7 @@ my %WriteMakefileArgs = (
     'Pod::Usage' => '1.00',
     'URI' => '1'
   },
-  'VERSION' => '1.111004',
+  'VERSION' => '1.111005',
   'test' => {
     'TESTS' => 't/*.t'
   }
