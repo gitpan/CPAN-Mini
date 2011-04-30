@@ -4,7 +4,7 @@ use warnings;
 
 package CPAN::Mini;
 BEGIN {
-  $CPAN::Mini::VERSION = '1.111005';
+  $CPAN::Mini::VERSION = '1.111006';
 }
 
 # ABSTRACT: create a minimal mirror of CPAN
@@ -118,7 +118,8 @@ sub new {
     changes_made => 0,
     dirmode      => 0711,  ## no critic Zero
     errors       => 1,
-    mirrored     => {}
+    mirrored     => {},
+    log_level    => 'info',
   );
 
   my $self = bless { %defaults, @_ } => $class;
@@ -171,8 +172,6 @@ sub new {
     Carp::croak "unable to contact the remote mirror"
       unless eval { $self->__lwp->head($test_uri)->is_success };
   }
-
-  $self->{log_level} ||= 'info';
 
   return $self;
 }
@@ -539,7 +538,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 1.111005
+version 1.111006
 
 =head1 SYNOPSIS
 
