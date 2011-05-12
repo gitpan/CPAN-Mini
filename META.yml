@@ -30,8 +30,9 @@ requires:
   URI: 1
   perl: 5.006
 resources:
-  repository: git://git.codesimply.com/CPAN-Mini.git
-version: 1.111006
+  homepage: http://github.com/rjbs/cpan-mini
+  repository: http://github.com/rjbs/cpan-mini
+version: 1.111007
 x_Dist_Zilla:
   plugins:
     -
@@ -138,6 +139,10 @@ x_Dist_Zilla:
       class: Dist::Zilla::Plugin::PodWeaver
       name: '@RJBS/PodWeaver'
       version: 3.101641
+    -
+      class: Dist::Zilla::Plugin::GithubMeta
+      name: '@RJBS/GithubMeta'
+      version: 0.12
     -
       class: Dist::Zilla::Plugin::Git::Check
       name: '@RJBS/@Git/Check'
