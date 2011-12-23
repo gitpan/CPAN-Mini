@@ -2,45 +2,47 @@
 use strict;
 use warnings;
 
-BEGIN { require 5.006; }
+use 5.006;
 
 use ExtUtils::MakeMaker 6.30;
 
 
 
 my %WriteMakefileArgs = (
-  'ABSTRACT' => 'create a minimal mirror of CPAN',
-  'AUTHOR' => 'Ricardo SIGNES <rjbs@cpan.org>, Randal Schwartz <merlyn@stonehenge.com>',
-  'BUILD_REQUIRES' => {
-    'Test::More' => '0.96'
+  "ABSTRACT" => "create a minimal mirror of CPAN",
+  "AUTHOR" => "Ricardo SIGNES <rjbs\@cpan.org>, Randal Schwartz <merlyn\@stonehenge.com>",
+  "BUILD_REQUIRES" => {
+    "Test::More" => "0.96"
   },
-  'CONFIGURE_REQUIRES' => {
-    'ExtUtils::MakeMaker' => '6.30'
+  "CONFIGURE_REQUIRES" => {
+    "ExtUtils::MakeMaker" => "6.30"
   },
-  'DISTNAME' => 'CPAN-Mini',
-  'EXE_FILES' => [
-    'bin/minicpan'
+  "DISTNAME" => "CPAN-Mini",
+  "EXE_FILES" => [
+    "bin/minicpan"
   ],
-  'LICENSE' => 'perl',
-  'NAME' => 'CPAN::Mini',
-  'PREREQ_PM' => {
-    'Carp' => '0',
-    'Compress::Zlib' => '1.20',
-    'File::Basename' => '0',
-    'File::Copy' => '0',
-    'File::Find' => '0',
-    'File::HomeDir' => '0.57',
-    'File::Path' => '2.04',
-    'File::Spec' => '0',
-    'File::Temp' => '0',
-    'Getopt::Long' => '0',
-    'LWP::UserAgent' => '5',
-    'Pod::Usage' => '1.00',
-    'URI' => '1'
+  "LICENSE" => "perl",
+  "NAME" => "CPAN::Mini",
+  "PREREQ_PM" => {
+    "Carp" => 0,
+    "Compress::Zlib" => "1.20",
+    "File::Basename" => 0,
+    "File::Copy" => 0,
+    "File::Find" => 0,
+    "File::HomeDir" => "0.57",
+    "File::Path" => "2.04",
+    "File::Spec" => 0,
+    "File::Temp" => 0,
+    "Getopt::Long" => 0,
+    "LWP::UserAgent" => 5,
+    "Pod::Usage" => "1.00",
+    "URI" => 1,
+    "strict" => 0,
+    "warnings" => 0
   },
-  'VERSION' => '1.111007',
-  'test' => {
-    'TESTS' => 't/*.t'
+  "VERSION" => "1.111008",
+  "test" => {
+    "TESTS" => "t/*.t"
   }
 );
 
