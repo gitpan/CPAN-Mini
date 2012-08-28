@@ -4,7 +4,7 @@ use warnings;
 
 package CPAN::Mini;
 {
-  $CPAN::Mini::VERSION = '1.111008';
+  $CPAN::Mini::VERSION = '1.111009';
 }
 
 # ABSTRACT: create a minimal mirror of CPAN
@@ -330,6 +330,7 @@ sub __do_filter {
     for (@$filter) {
       return 1 if $self->__do_filter($_, $file);
     }
+    return;
   }
 
   if (ref($filter) eq 'CODE') {
@@ -484,18 +485,36 @@ sub read_config {
     or die "couldn't open config file $config_file: $!";
 
   my %config;
+  my %is_multivalue = map {; $_ => 1 }
+                      qw(also_mirror module_filters path_filters);
+
+  $config{$_} = [] for keys %is_multivalue;
+
   while (<$config_fh>) {
     chomp;
     next if /\A\s*\Z/sm;
-    if (/\A(\w+):\s*(\S.*?)\s*\Z/sm) { $config{$1} = $2; }
+
+    if (/\A(\w+):\s*(\S.*?)\s*\Z/sm) {
+      my ($key, $value) = ($1, $2);
+
+      if ($is_multivalue{ $key }) {
+        push @{ $config{$key} }, split /\s+/, $value;
+      } else {
+        $config{ $key } = $value;
+      }
+    }
   }
 
   for (qw(also_mirror)) {
-    $config{$_} = [ grep { length } split /\s+/, $config{$_} ] if $config{$_};
+    $config{$_} = [ grep { length } @{ $config{$_} } ];
   }
 
   for (qw(module_filters path_filters)) {
-    $config{$_} = [ map { qr/$_/ } split /\s+/, $config{$_} ] if $config{$_};
+    $config{$_} = [ map { qr/$_/ } @{ $config{$_} } ];
+  }
+
+  for (keys %is_multivalue) {
+    delete $config{$_} unless @{ $config{$_} };
   }
 
   return %config;
@@ -538,7 +557,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 1.111008
+version 1.111009
 
 =head1 SYNOPSIS
 
