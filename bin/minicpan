@@ -7,7 +7,7 @@ CPAN::Mini::App->run;
 # PODNAME: minicpan
 # ABSTRACT: uses CPAN::Mini to create or update a local mirror
 
-
+__END__
 
 =pod
 
@@ -17,7 +17,7 @@ minicpan - uses CPAN::Mini to create or update a local mirror
 
 =head1 VERSION
 
-version 1.111009
+version 1.111010
 
 =head1 SYNOPSIS
 
@@ -109,7 +109,3 @@ This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-
-
-__END__
-

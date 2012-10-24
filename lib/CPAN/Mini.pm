@@ -4,7 +4,7 @@ use warnings;
 
 package CPAN::Mini;
 {
-  $CPAN::Mini::VERSION = '1.111009';
+  $CPAN::Mini::VERSION = '1.111010';
 }
 
 # ABSTRACT: create a minimal mirror of CPAN
@@ -435,7 +435,10 @@ sub log {
   $_[0]->log_unconditionally($_[1], $_[2]);
 }
 
-sub trace { my $self = shift; $self->log_info(@_); }
+sub trace {
+  my $self = shift;
+  $self->log(@_);
+}
 
 sub log_debug {
   my ($self, @rest) = @_;
@@ -549,6 +552,7 @@ sub config_file {
 1;
 
 __END__
+
 =pod
 
 =head1 NAME
@@ -557,7 +561,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 1.111009
+version 1.111010
 
 =head1 SYNOPSIS
 
@@ -879,4 +883,3 @@ This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-

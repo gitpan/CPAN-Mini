@@ -3,7 +3,7 @@ use warnings;
 
 package CPAN::Mini::App;
 {
-  $CPAN::Mini::App::VERSION = '1.111009';
+  $CPAN::Mini::App::VERSION = '1.111010';
 }
 
 # ABSTRACT: the guts of the minicpan command
@@ -134,6 +134,7 @@ sub initialize_minicpan {
 1;
 
 __END__
+
 =pod
 
 =head1 NAME
@@ -142,7 +143,7 @@ CPAN::Mini::App - the guts of the minicpan command
 
 =head1 VERSION
 
-version 1.111009
+version 1.111010
 
 =head1 SYNOPSIS
 
@@ -185,4 +186,3 @@ This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-
