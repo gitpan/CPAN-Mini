@@ -17,7 +17,7 @@ minicpan - uses CPAN::Mini to create or update a local mirror
 
 =head1 VERSION
 
-version 1.111012
+version 1.111013
 
 =head1 SYNOPSIS
 
@@ -40,6 +40,7 @@ version 1.111012
    -t SEC      - timeout in sec. Defaults to 180 sec
    --offline   - operate in offline mode (generally: do nothing)
    --log-level - provide a log level; instead of --debug, -q, or -qq
+   --remote-from TYPE - cpan remote from 'cpan' or 'cpanplus' configs
 
 =head1 DESCRIPTION
 

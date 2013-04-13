@@ -48,6 +48,8 @@ sub pmver {
     return sprintf('%-45s => %-10s%-15s%s', $module, $pmver, $wanted, "\n");
 }
 
+eval { $v .= pmver('CPAN','any version') };
+eval { $v .= pmver('CPANPLUS::Backend','any version') };
 eval { $v .= pmver('Carp','any version') };
 eval { $v .= pmver('Compress::Zlib','1.20') };
 eval { $v .= pmver('ExtUtils::MakeMaker','6.30') };

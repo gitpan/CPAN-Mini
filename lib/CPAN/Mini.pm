@@ -4,7 +4,7 @@ use warnings;
 
 package CPAN::Mini;
 {
-  $CPAN::Mini::VERSION = '1.111012';
+  $CPAN::Mini::VERSION = '1.111013';
 }
 
 # ABSTRACT: create a minimal mirror of CPAN
@@ -33,9 +33,13 @@ sub update_mirror {
   $self = $self->new(@_) unless ref $self;
 
   unless ($self->{offline}) {
-    $self->log("Updating $self->{local}");
+    my $local = $self->{local};
+
+    $self->log("Updating $local");
     $self->log("Mirroring from $self->{remote}");
     $self->log("=" x 63);
+
+    die "local mirror target $local is not writable" unless -w $local;
 
     # mirrored tracks the already done, keyed by filename
     # 1 = local-checked, 2 = remote-mirrored
@@ -494,6 +498,9 @@ sub read_config {
   $class->log("Using config from $config_file")
     if ($options->{log_level}||'info') =~ /\A(?:warn|fatal)\z/;
 
+  substr($config_file, 0, 1, $class->__homedir)
+    if substr($config_file, 0, 1) eq q{~};
+
   return unless -e $config_file;
 
   open my $config_fh, '<', $config_file
@@ -561,6 +568,61 @@ sub config_file {
 }
 
 
+sub remote_from {
+  my ( $class, $remote_from, $orig_remote, $quiet ) = @_;
+
+  my $method = lc "remote_from_" . $remote_from;
+
+  Carp::croak "unknown remote_from value: $remote_from"
+    unless $class->can($method);
+
+  my $new_remote = $class->$method;
+
+  warn "overriding '$orig_remote' with '$new_remote' via $method\n"
+    if !$quiet && $orig_remote;
+
+  return $new_remote;
+}
+
+
+sub remote_from_cpan {
+  my ($self) = @_;
+
+  Carp::croak "unable find a CPAN, maybe you need to install it"
+    unless eval { require CPAN; 1 };
+
+  CPAN::HandleConfig::require_myconfig_or_config();
+
+  Carp::croak "unable to find mirror list in your CPAN config"
+    unless exists $CPAN::Config->{urllist};
+
+  Carp::croak "unable to find first mirror url in your CPAN config"
+    unless ref( $CPAN::Config->{urllist} ) eq 'ARRAY' && $CPAN::Config->{urllist}[0];
+
+  return $CPAN::Config->{urllist}[0];
+}
+
+
+sub remote_from_cpanplus {
+  my ($self) = @_;
+
+  Carp::croak "unable find a CPANPLUS, maybe you need to install it"
+    unless eval { require CPANPLUS::Backend };
+
+  my $cb = CPANPLUS::Backend->new;
+  my $hosts = $cb->configure_object->get_conf('hosts');
+
+  Carp::croak "unable to find mirror list in your CPANPLUS config"
+    unless $hosts;
+
+  Carp::croak "unable to find first mirror in your CPANPLUS config"
+    unless ref($hosts) eq 'ARRAY' && $hosts->[0];
+
+  my $url_parts = $hosts->[0];
+  return $url_parts->{scheme} . "://" . $url_parts->{host} . ( $url_parts->{path} || '' );
+}
+
+
 1;
 
 __END__
@@ -573,7 +635,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 1.111012
+version 1.111013
 
 =head1 SYNOPSIS
 
@@ -626,7 +688,7 @@ the last non-developer release of every dist for every author
   );
 
 This is the only method that need be called from outside this module.  It will
-update the local mirror with the files from the remote mirror.   
+update the local mirror with the files from the remote mirror.
 
 If called as a class method, C<update_mirror> creates an ephemeral CPAN::Mini
 object on which other methods are called.  That object is used to store mirror
@@ -637,6 +699,20 @@ This method returns the number of files updated.
 The following options are recognized:
 
 =over 4
+
+=item *
+
+C<local>
+
+This is the local file path where the mirror will be written or updated.
+
+=item *
+
+C<remote>
+
+This is the URL of the CPAN mirror from which to work.  A reasonable default
+will be picked by default.  A list of CPAN mirrors can be found at
+L<http://www.cpan.org/SITES.html>
 
 =item *
 
@@ -777,7 +853,7 @@ all files are allowed.
 
 This method looks through the local mirror's files.  If it finds a file that
 neither belongs in the mirror nor is allowed (see the C<file_allowed> method),
-C<clean_file> is called on the file. 
+C<clean_file> is called on the file.
 
 If you set C<ignore_source_control> to a true value, then this doesn't clean
 up files that belong to source control systems. Currently this ignores:
@@ -819,15 +895,15 @@ L<File::HomeDir|File::HomeDir>.
 
 =head2 config_file
 
-  my %config = CPAN::Mini->config_file( { options } );
+  my $config_file = CPAN::Mini->config_file( { options } );
 
 This routine returns the config file name. It first looks at for the
 C<config_file> setting, then the C<CPAN_MINI_CONFIG> environment
 variable, then the default F<~/.minicpanrc>, and finally the
 F<CPAN/Mini/minicpan.conf>. It uses the first defined value it finds.
-If the filename it selects does not exist, it returns the empty list.
+If the filename it selects does not exist, it returns false.
 
-OPTIONS is an optional hash reference of the C<CPAN::Mini> config hash. 
+OPTIONS is an optional hash reference of the C<CPAN::Mini> config hash.
 
 =begin devel
 
@@ -844,6 +920,33 @@ filtered (to be skipped).  Returns 0 if the distribution is to not filtered
 (not to be skipped).
 
 =end devel
+
+=head2 remote_from
+
+  my $remote = CPAN::Mini->remote_from( $remote_from, $orig_remote, $quiet );
+
+This routine take an string argument and turn it into a method
+call to handle to retrieve the a cpan mirror url from a source.
+Currently supported methods:
+
+    cpan     - fetch the first mirror from your CPAN.pm config
+    cpanplus - fetch the first mirror from your CPANPLUS.pm config
+
+=head2 remote_from_cpan
+
+  my $remote = CPAN::Mini->remote_from_cpan;
+
+This routine loads your CPAN.pm config and returns the first mirror in mirror
+list.  You can set this as your default by setting remote_from:cpan in your
+F<.minicpanrc> file.
+
+=head2 remote_from_cpanplus
+
+  my $remote = CPAN::Mini->remote_from_cpanplus;
+
+This routine loads your CPANPLUS.pm config and returns the first mirror in
+mirror list.  You can set this as your default by setting remote_from:cpanplus
+in your F<.minicpanrc> file.
 
 =head1 SEE ALSO
 

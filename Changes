@@ -1,5 +1,21 @@
 Revision history for CPAN-Mini
 
+1.111013  2013-04-13 14:02:58 Europe/London
+          make www.cpan.org the default remote!
+
+          link to the list of mirrors, too (thanks, SYSMON!)
+
+          pass all options from command line, not just known ones (thanks,
+          Jeffrey Thalhammer, who waited a very very long time for me to apply
+          this!)
+
+          add --remote-from option to get remote from CPAN or CPANPLUS config
+          (thanks, Jeff Bisbee, who also waited a long time)
+
+          expand leading "~" in config file name (suggested by justincase)
+
+          die if local target isn't writable (suggested by SARGIE)
+
 1.111012  2013-03-28 16:32:58 America/New_York
           when testing, mock my_home harder (thanks, David Golden!)
 
