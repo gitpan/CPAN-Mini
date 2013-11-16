@@ -3,7 +3,7 @@ use warnings;
 
 package CPAN::Mini::App;
 {
-  $CPAN::Mini::App::VERSION = '1.111013';
+  $CPAN::Mini::App::VERSION = '1.111014';
 }
 
 # ABSTRACT: the guts of the minicpan command
@@ -145,7 +145,7 @@ CPAN::Mini::App - the guts of the minicpan command
 
 =head1 VERSION
 
-version 1.111013
+version 1.111014
 
 =head1 SYNOPSIS
 

@@ -4,7 +4,7 @@ use warnings;
 
 package CPAN::Mini;
 {
-  $CPAN::Mini::VERSION = '1.111013';
+  $CPAN::Mini::VERSION = '1.111014';
 }
 
 # ABSTRACT: create a minimal mirror of CPAN
@@ -635,7 +635,7 @@ CPAN::Mini - create a minimal mirror of CPAN
 
 =head1 VERSION
 
-version 1.111013
+version 1.111014
 
 =head1 SYNOPSIS
 
