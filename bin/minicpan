@@ -11,13 +11,15 @@ __END__
 
 =pod
 
+=encoding UTF-8
+
 =head1 NAME
 
 minicpan - uses CPAN::Mini to create or update a local mirror
 
 =head1 VERSION
 
-version 1.111014
+version 1.111015
 
 =head1 SYNOPSIS
 
