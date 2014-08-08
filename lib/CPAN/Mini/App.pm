@@ -2,12 +2,16 @@ use strict;
 use warnings;
 
 package CPAN::Mini::App;
-{
-  $CPAN::Mini::App::VERSION = '1.111015';
-}
-
+$CPAN::Mini::App::VERSION = '1.111016';
 # ABSTRACT: the guts of the minicpan command
 
+#pod =head1 SYNOPSIS
+#pod
+#pod   #!/usr/bin/perl
+#pod   use CPAN::Mini::App;
+#pod   CPAN::Mini::App->run;
+#pod
+#pod =cut
 
 use CPAN::Mini;
 use File::HomeDir;
@@ -24,6 +28,12 @@ sub _display_version {
   exit;
 }
 
+#pod =method run
+#pod
+#pod This method is called by F<minicpan> to do all the work.  Don't rely on what it
+#pod does just yet.
+#pod
+#pod =cut
 
 sub _validate_log_level {
   my ($class, $level) = @_;
@@ -132,6 +142,13 @@ sub _option_spec {
   >;
 }
 
+#pod =head1 SEE ALSO
+#pod
+#pod Randal Schwartz's original article, which can be found here:
+#pod
+#pod   http://www.stonehenge.com/merlyn/LinuxMag/col42.html
+#pod
+#pod =cut
 
 1;
 
@@ -147,7 +164,7 @@ CPAN::Mini::App - the guts of the minicpan command
 
 =head1 VERSION
 
-version 1.111015
+version 1.111016
 
 =head1 SYNOPSIS
 

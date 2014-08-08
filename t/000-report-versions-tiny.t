@@ -50,7 +50,7 @@ sub pmver {
 
 eval { $v .= pmver('Carp','any version') };
 eval { $v .= pmver('Compress::Zlib','1.20') };
-eval { $v .= pmver('ExtUtils::MakeMaker','6.30') };
+eval { $v .= pmver('ExtUtils::MakeMaker','any version') };
 eval { $v .= pmver('File::Basename','any version') };
 eval { $v .= pmver('File::Copy','any version') };
 eval { $v .= pmver('File::Find','any version') };
